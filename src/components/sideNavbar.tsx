@@ -31,8 +31,14 @@ const SideNavbar = () => {
             />
           ) : (
             <div className="w-6 h-6 flex flex-col justify-center space-y-1">
-              <div className="w-6 h-0.5" style={{ backgroundColor: 'var(--accent-primary)' }}></div>
-              <div className="w-6 h-0.5" style={{ backgroundColor: 'var(--accent-primary)' }}></div>
+              <div
+                className="w-6 h-0.5"
+                style={{ backgroundColor: "var(--accent-primary)" }}
+              ></div>
+              <div
+                className="w-6 h-0.5"
+                style={{ backgroundColor: "var(--accent-primary)" }}
+              ></div>
             </div>
           )}
         </button>

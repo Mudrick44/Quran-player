@@ -1,0 +1,49 @@
+/* Apple Music Exact Color System */
+
+[data-theme='light'] {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f5f5f7;
+  --bg-card: #fafafa;
+  --text-primary: rgba(0,0,0,.88);
+  --text-secondary: rgba(0,0,0,.56);
+  --text-tertiary: rgba(0,0,0,.48);
+  --border-primary: #d2d2d7;
+  --border-secondary: rgba(0, 0, 0, 0.15);
+  --accent-primary: #fa586a;
+  --accent-hover: #ff8a9c;
+  --accent-pressed: #ff7183;
+  --accent-disabled: rgba(250,88,106,.35);
+  --shadow: rgba(0, 0, 0, 0.1);
+  --overlay: rgba(0, 0, 0, 0.6);
+  --sidebar-bg: rgba(235,235,245,.03);
+  --sidebar-selected: rgba(235,235,245,.1);
+}
+
+[data-theme='dark'] {
+  --bg-primary: #000000;
+  --bg-secondary: #0a0a0a;
+  --bg-card: #161618;
+  --text-primary: hsla(0,0%,100%,.92);
+  --text-secondary: hsla(0,0%,100%,.64);
+  --text-tertiary: hsla(0,0%,100%,.4);
+  --border-primary: #3a3a3c;
+  --border-secondary: rgba(255, 255, 255, 0.15);
+  --accent-primary: #fa586a;
+  --accent-hover: #ff8a9c;
+  --accent-pressed: #ff7183;
+  --accent-disabled: rgba(250,88,106,.35);
+  --shadow: rgba(0, 0, 0, 0.5);
+  --overlay: rgba(0, 0, 0, 0.8);
+  --sidebar-bg: rgba(235,235,245,.03);
+  --sidebar-selected: rgba(235,235,245,.1);
+}
+
+/* Scrollbar styles for both themes */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

@@ -3,7 +3,6 @@ import {
   HomeIcon,
   BookOpenIcon,
   MicrophoneIcon,
-  Bars3Icon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
 
@@ -24,23 +23,40 @@ const SideNavbar = () => {
     <>
       {/* Mobile Hamburger Button */}
       <div className="md:hidden fixed top-4 left-4 z-50">
-        <button
-          onClick={toggleMobileMenu}
-          className="p-2 rounded-lg bg-[rgba(60,60,67,0.03)] border border-[rgba(0,0,0,.15)]"
-        >
+        <button onClick={toggleMobileMenu} className="p-2">
           {isMobileMenuOpen ? (
-            <XMarkIcon className="w-6 h-6 text-[#FA233B]" />
+            <XMarkIcon
+              className="w-6 h-6"
+              style={{ color: "var(--accent-primary)" }}
+            />
           ) : (
-            <Bars3Icon className="w-6 h-6 text-[#FA233B]" />
+            <div className="w-6 h-6 flex flex-col justify-center space-y-1">
+              <div className="w-6 h-0.5" style={{ backgroundColor: 'var(--accent-primary)' }}></div>
+              <div className="w-6 h-0.5" style={{ backgroundColor: 'var(--accent-primary)' }}></div>
+            </div>
           )}
         </button>
       </div>
 
       {/* Sidebar - Desktop */}
-      <div className="hidden md:flex border-r-2 border-[rgba(0,0,0,.15)] h-screen w-[260px] bg-[rgba(60,60,67,0.03)] flex-col">
+      <div
+        className="hidden md:flex fixed top-0 left-0 h-screen w-[260px] flex-col z-30"
+        style={{
+          backgroundColor: "var(--sidebar-bg)",
+          borderRight: "2px solid var(--border-secondary)",
+        }}
+      >
         {/* Header */}
-        <div className="ps-[30px] pe-[30px] pt-[17px] pb-[17px] min-h-[50px]">
-          <h1 className="text-[rgba(0,0,0,.88)] text-xl font-semibold">
+        <div className="ps-[30px] pe-[30px] pt-[17px] pb-[17px] min-h-[50px] flex flex-row justify-cente gap-2">
+          <img
+            src="/src/assets/quran-rehal-svgrepo-com.svg"
+            alt="quran icon"
+            className="w-8 h-8"
+          />
+          <h1
+            className="text-xl font-semibold"
+            style={{ color: "var(--text-primary)" }}
+          >
             Quran Player
           </h1>
         </div>
@@ -51,10 +67,28 @@ const SideNavbar = () => {
             return (
               <div
                 key={item.id}
-                className="flex items-center ps-[30px] pe-[30px] py-3 hover:bg-[rgba(0,0,0,.05)] cursor-pointer transition-colors duration-200 group"
+                className="flex items-center ps-[30px] pe-[30px] py-3 cursor-pointer transition-colors duration-200 group hover:bg-opacity-50"
+                style={
+                  {
+                    "--hover-bg": "var(--sidebar-selected)",
+                  } as React.CSSProperties
+                }
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.backgroundColor =
+                    "var(--sidebar-selected)")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.backgroundColor = "transparent")
+                }
               >
-                <item.icon className="w-5 h-5 mr-3 text-[#FA233B] group-hover:text-[#dc2626] group-hover:scale-110 transition-all duration-200" />
-                <span className="text-[rgba(0,0,0,.88)] font-medium text-base">
+                <item.icon
+                  className="w-5 h-5 mr-3 group-hover:scale-110 transition-all duration-200"
+                  style={{ color: "var(--accent-primary)" }}
+                />
+                <span
+                  className="font-medium text-base"
+                  style={{ color: "var(--text-primary)" }}
+                >
                   {item.label}
                 </span>
               </div>
@@ -64,9 +98,12 @@ const SideNavbar = () => {
 
         {/* Footer */}
         <div className="mt-auto">
-          <div className="border-t border-[rgba(0,0,0,.15)]"></div>
+          <div style={{ borderTop: "1px solid var(--border-secondary)" }}></div>
           <div className="ps-[30px] pe-[30px] py-4">
-            <p className="text-[rgba(0,0,0,.6)] text-sm text-center">
+            <p
+              className="text-sm text-center"
+              style={{ color: "var(--text-secondary)" }}
+            >
               Made with ❤️ by Mudrick
             </p>
           </div>
@@ -75,18 +112,40 @@ const SideNavbar = () => {
 
       {/* Mobile Menu - Slides from top */}
       <div
-        className={`md:hidden fixed top-0 left-0 right-0 bottom-0 h-screen bg-[#2e2e2e] z-50 transform transition-transform duration-300 ease-in-out ${
+        className={`md:hidden fixed top-0 left-0 right-0 bottom-0 h-screen z-50 transform transition-transform duration-300 ease-in-out ${
           isMobileMenuOpen ? "translate-y-0" : "-translate-y-full"
         }`}
+        style={{ backgroundColor: "var(--bg-card)" }}
       >
         {/* Mobile Header */}
-        <div className="flex items-center justify-between ps-[30px] pe-[30px] pt-[17px] pb-[17px] min-h-[50px] border-b border-[rgba(255,255,255,.15)]">
-          <h1 className="text-white text-xl font-semibold">Quran Player</h1>
+        <div
+          className="flex items-center justify-between ps-[30px] pe-[30px] pt-[17px] pb-[17px] min-h-[50px]"
+          style={{ borderBottom: "1px solid var(--border-secondary)" }}
+        >
+          <h1
+            className="text-xl font-semibold"
+            style={{ color: "var(--text-primary)" }}
+          >
+            Quran Player
+          </h1>
           <button
             onClick={toggleMobileMenu}
-            className="p-2 rounded-lg hover:bg-[rgba(255,255,255,.1)]"
+            className="p-2 rounded-lg transition-colors duration-200"
+            style={
+              { "--hover-bg": "var(--sidebar-selected)" } as React.CSSProperties
+            }
+            onMouseEnter={(e) =>
+              (e.currentTarget.style.backgroundColor =
+                "var(--sidebar-selected)")
+            }
+            onMouseLeave={(e) =>
+              (e.currentTarget.style.backgroundColor = "transparent")
+            }
           >
-            <XMarkIcon className="w-6 h-6 text-[#FA233B]" />
+            <XMarkIcon
+              className="w-6 h-6"
+              style={{ color: "var(--accent-primary)" }}
+            />
           </button>
         </div>
 
@@ -96,11 +155,29 @@ const SideNavbar = () => {
             return (
               <div
                 key={item.id}
-                className="flex items-center ps-[30px] pe-[30px] py-4 hover:bg-[rgba(255,255,255,.1)] cursor-pointer transition-colors duration-200 group"
+                className="flex items-center ps-[30px] pe-[30px] py-4 cursor-pointer transition-colors duration-200 group"
+                style={
+                  {
+                    "--hover-bg": "var(--sidebar-selected)",
+                  } as React.CSSProperties
+                }
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.backgroundColor =
+                    "var(--sidebar-selected)")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.backgroundColor = "transparent")
+                }
                 onClick={toggleMobileMenu}
               >
-                <item.icon className="w-6 h-6 mr-4 text-[#FA233B] group-hover:text-[#dc2626] group-hover:scale-110 transition-all duration-200" />
-                <span className="text-white font-medium text-lg">
+                <item.icon
+                  className="w-6 h-6 mr-4 group-hover:scale-110 transition-all duration-200"
+                  style={{ color: "var(--accent-primary)" }}
+                />
+                <span
+                  className="font-medium text-lg"
+                  style={{ color: "var(--text-primary)" }}
+                >
                   {item.label}
                 </span>
               </div>
@@ -109,9 +186,12 @@ const SideNavbar = () => {
         </nav>
 
         {/* Mobile Footer */}
-        <div className="border-t border-[rgba(255,255,255,.15)]">
+        <div style={{ borderTop: "1px solid var(--border-secondary)" }}>
           <div className="ps-[30px] pe-[30px] py-4">
-            <p className="text-[rgba(255,255,255,.6)] text-sm text-center">
+            <p
+              className="text-sm text-center"
+              style={{ color: "var(--text-secondary)" }}
+            >
               Made with ❤️ by Mudrick
             </p>
           </div>

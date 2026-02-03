@@ -5,8 +5,11 @@ import {
   MicrophoneIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
+interface SideNavbarProps {
+  onselectMenuItem?: (item: string) => void;
+}
 
-const SideNavbar = () => {
+const SideNavbar = ({ onselectMenuItem }: SideNavbarProps) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const navItems = [
@@ -73,6 +76,7 @@ const SideNavbar = () => {
             return (
               <div
                 key={item.id}
+                onClick={() => onselectMenuItem && onselectMenuItem(item.label)}
                 className="flex items-center ps-[30px] pe-[30px] py-3 cursor-pointer transition-colors duration-200 group hover:bg-opacity-50"
                 style={
                   {

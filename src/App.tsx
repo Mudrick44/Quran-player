@@ -9,6 +9,11 @@ import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
 import SurahPlayer from "./components/surahPlayer";
 import { PlayerProvider, usePlayer } from "./context/PlayerContext";
 
+// Import images so Vite can bundle them
+import quran3Image from "./assets/quran3.png";
+import quran4Image from "./assets/quran4.png";
+import quran5Image from "./assets/quran5.png";
+
 interface SurahData {
   surahName: string;
   surahNameArabic: string;
@@ -75,7 +80,7 @@ const App: React.FC = () => {
       subtitle: "Daily Essentials",
       description:
         "Start your day with the most beautiful recitation of Al-Fatiha and selected verses.",
-      imageSrc: "/src/assets/quran5.png",
+      imageSrc: quran5Image,
       surahNumbers: [1, 36, 67, 78, 87, 112, 113, 114], // Al-Fatiha, Ya-Sin, Al-Mulk, An-Naba, Al-A'la, Al-Ikhlas, Al-Falaq, An-Nas
     },
     {
@@ -84,7 +89,7 @@ const App: React.FC = () => {
       subtitle: "Peaceful Recitations",
       description:
         "Experience peaceful and melodious recitations with carefully selected Surahs for reflection.",
-      imageSrc: "/src/assets/quran4.png",
+      imageSrc: quran4Image,
       surahNumbers: [18, 19, 20, 55, 56], // Al-Kahf, Maryam, Ta-Ha, Ar-Rahman, Al-Waqi'ah
     },
     {
@@ -93,7 +98,7 @@ const App: React.FC = () => {
       subtitle: "For Memorization",
       description:
         "Perfect for memorization - short surahs with beautiful recitations and clear pronunciation.",
-      imageSrc: "/src/assets/quran3.png",
+      imageSrc: quran3Image,
       surahNumbers: [93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114], // Last 22 surahs
     },
   ];

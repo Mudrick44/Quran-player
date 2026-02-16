@@ -32,9 +32,15 @@ interface PlayerContextType {
   duration: number;
   volume: number;
   isMuted: boolean;
+  autoPlay: boolean;
+  currentPlaylist: SurahInfo[] | null;
   playSurah: (surah: SurahInfo) => void;
+  playSurahFromPlaylist: (surah: SurahInfo, playlist: SurahInfo[]) => void;
+  setPlaylist: (playlist: SurahInfo[] | null) => void;
+  setSurahList: (surahs: SurahInfo[]) => void;
   changeReciter: (reciter: ReciterInfo) => void;
   togglePlay: () => void;
+  toggleAutoPlay: () => void;
   pause: () => void;
   play: () => void;
   seekTo: (time: number) => void;
@@ -63,8 +69,18 @@ export const PlayerProvider = ({ children }: PlayerProviderProps) => {
   const [duration, setDuration] = useState(0);
   const [volume, setVolumeState] = useState(0.7);
   const [isMuted, setIsMuted] = useState(false);
+  const [autoPlay, setAutoPlay] = useState(true);
+  const [currentPlaylist, setCurrentPlaylist] = useState<SurahInfo[] | null>(null);
+  const [allSurahs, setAllSurahs] = useState<SurahInfo[]>([]);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const autoPlayRef = useRef(autoPlay);
+  const playNextRef = useRef<() => void>(() => {});
+
+  // Keep refs in sync with state
+  useEffect(() => {
+    autoPlayRef.current = autoPlay;
+  }, [autoPlay]);
 
   // Initialize audio element
   useEffect(() => {
@@ -84,8 +100,10 @@ export const PlayerProvider = ({ children }: PlayerProviderProps) => {
 
     audio.addEventListener("ended", () => {
       setIsPlaying(false);
-      // Auto-play next surah
-      playNext();
+      // Auto-play next surah if enabled
+      if (autoPlayRef.current) {
+        playNextRef.current();
+      }
     });
 
     audio.addEventListener("canplay", () => {
@@ -188,31 +206,111 @@ export const PlayerProvider = ({ children }: PlayerProviderProps) => {
     setIsMuted(!isMuted);
   };
 
+  const toggleAutoPlay = () => {
+    setAutoPlay((prev) => !prev);
+  };
+
+  const setPlaylist = (playlist: SurahInfo[] | null) => {
+    setCurrentPlaylist(playlist);
+  };
+
+  const setSurahList = (surahs: SurahInfo[]) => {
+    setAllSurahs(surahs);
+  };
+
+  const playSurahFromPlaylist = (surah: SurahInfo, playlist: SurahInfo[]) => {
+    setCurrentPlaylist(playlist);
+    playSurah(surah);
+  };
+
   const playNext = () => {
-    if (currentSurah && currentSurah.number < 114) {
-      // We'll need to fetch the next surah's info
-      // For now, we'll just increment the number
-      const nextNumber = currentSurah.number + 1;
-      // This is a simplified version - in a full implementation,
-      // you'd fetch the surah metadata too
-      playSurah({
-        ...currentSurah,
-        number: nextNumber,
-        name: `Surah ${nextNumber}`,
-      });
+    if (!currentSurah) return;
+
+    // If playing from a playlist, follow playlist order
+    if (currentPlaylist && currentPlaylist.length > 0) {
+      const currentIndex = currentPlaylist.findIndex(
+        (s) => s.number === currentSurah.number
+      );
+
+      if (currentIndex !== -1) {
+        // Get next in playlist, loop to start if at end
+        const nextIndex = (currentIndex + 1) % currentPlaylist.length;
+        playSurah(currentPlaylist[nextIndex]);
+        return;
+      }
+    }
+
+    // Sequential playback (not in playlist)
+    if (currentSurah.number >= 114) {
+      // Loop back to surah 1
+      const firstSurah = allSurahs[0];
+      if (firstSurah) {
+        playSurah(firstSurah);
+      } else {
+        playSurah({ ...currentSurah, number: 1, name: "Al-Fatihah" });
+      }
+    } else {
+      // Play next sequential surah with proper metadata
+      const nextSurah = allSurahs[currentSurah.number]; // allSurahs is 0-indexed, so number gives us next
+      if (nextSurah) {
+        playSurah(nextSurah);
+      } else {
+        playSurah({
+          ...currentSurah,
+          number: currentSurah.number + 1,
+          name: `Surah ${currentSurah.number + 1}`,
+        });
+      }
     }
   };
 
   const playPrevious = () => {
-    if (currentSurah && currentSurah.number > 1) {
-      const prevNumber = currentSurah.number - 1;
-      playSurah({
-        ...currentSurah,
-        number: prevNumber,
-        name: `Surah ${prevNumber}`,
-      });
+    if (!currentSurah) return;
+
+    // If playing from a playlist, follow playlist order
+    if (currentPlaylist && currentPlaylist.length > 0) {
+      const currentIndex = currentPlaylist.findIndex(
+        (s) => s.number === currentSurah.number
+      );
+
+      if (currentIndex !== -1) {
+        // Get previous in playlist, loop to end if at start
+        const prevIndex = currentIndex === 0
+          ? currentPlaylist.length - 1
+          : currentIndex - 1;
+        playSurah(currentPlaylist[prevIndex]);
+        return;
+      }
+    }
+
+    // Sequential playback (not in playlist)
+    if (currentSurah.number <= 1) {
+      // Loop back to surah 114
+      const lastSurah = allSurahs[113];
+      if (lastSurah) {
+        playSurah(lastSurah);
+      } else {
+        playSurah({ ...currentSurah, number: 114, name: "An-Nas" });
+      }
+    } else {
+      // Play previous sequential surah with proper metadata
+      const prevSurah = allSurahs[currentSurah.number - 2]; // -2 because 0-indexed and we want previous
+      if (prevSurah) {
+        playSurah(prevSurah);
+      } else {
+        playSurah({
+          ...currentSurah,
+          number: currentSurah.number - 1,
+          name: `Surah ${currentSurah.number - 1}`,
+        });
+      }
     }
   };
+
+  // Keep playNextRef in sync so ended handler can call it
+  useEffect(() => {
+    playNextRef.current = playNext;
+  });
 
   const changeReciter = async (reciter: ReciterInfo) => {
     setCurrentReciter(reciter);
@@ -270,9 +368,15 @@ export const PlayerProvider = ({ children }: PlayerProviderProps) => {
         duration,
         volume,
         isMuted,
+        autoPlay,
+        currentPlaylist,
         playSurah,
+        playSurahFromPlaylist,
+        setPlaylist,
+        setSurahList,
         changeReciter,
         togglePlay,
+        toggleAutoPlay,
         pause,
         play,
         seekTo,

@@ -42,7 +42,7 @@ const App: React.FC = () => {
   const [currentPagemain, setCurrentPageMain] = useState("Home");
   const [selectedPlaylist, setSelectedPlaylist] = useState<PlaylistData | null>(null);
 
-  const { playSurah } = usePlayer();
+  const { playSurah, setSurahList, setPlaylist } = usePlayer();
 
   useEffect(() => {
     const fetchSurahs = async () => {
@@ -53,6 +53,15 @@ const App: React.FC = () => {
         );
         const data: SurahData[] = await response.json();
         setSurahs(data);
+
+        // Pass surah data to PlayerContext for proper metadata in playNext/playPrevious
+        const surahInfoList = data.map((surah, index) => ({
+          number: index + 1,
+          name: surah.surahName,
+          nameArabic: surah.surahNameArabic,
+          totalAyah: surah.totalAyah,
+        }));
+        setSurahList(surahInfoList);
       } catch (error) {
         console.error("Error fetching surahs:", error);
       } finally {
@@ -61,6 +70,7 @@ const App: React.FC = () => {
     };
 
     fetchSurahs();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const getCurrentPageSurahs = () => {
@@ -165,7 +175,7 @@ const App: React.FC = () => {
                 </h2>
 
                 <div
-                  className="w-full overflow-x-auto pb-4 mb-8 md:overflow-x-visible md:pb-0 scrollbar-hide"
+                  className="w-full overflow-x-auto pb-4 md:overflow-x-visible md:pb-0 scrollbar-hide"
                   style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
                 >
                   <div className="flex gap-8 min-w-fit md:grid md:grid-cols-2 xl:grid-cols-3 md:gap-6 md:min-w-0">
@@ -180,6 +190,23 @@ const App: React.FC = () => {
                       />
                     ))}
                   </div>
+                </div>
+
+                {/* Swipe indicator - Mobile only */}
+                <div className="flex md:hidden items-center justify-center gap-1.5 mt-2 mb-8">
+                  {playlists.map((_, index) => (
+                    <div
+                      key={index}
+                      className="w-1.5 h-1.5 rounded-full"
+                      style={{ backgroundColor: "var(--text-tertiary)" }}
+                    />
+                  ))}
+                  <span
+                    className="text-xs ml-2"
+                    style={{ color: "var(--text-tertiary)" }}
+                  >
+                    Swipe to explore
+                  </span>
                 </div>
               </>
             ) : null}
@@ -267,14 +294,16 @@ const App: React.FC = () => {
                             key={surahNumber}
                             number={surahNumber}
                             data={surah}
-                            onClick={() =>
+                            onClick={() => {
+                              // Clear playlist context when playing from Quick Picks (sequential mode)
+                              setPlaylist(null);
                               playSurah({
                                 number: surahNumber,
                                 name: surah.surahName,
                                 nameArabic: surah.surahNameArabic,
                                 totalAyah: surah.totalAyah,
-                              })
-                            }
+                              });
+                            }}
                           />
                         );
                       })}

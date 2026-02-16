@@ -8,6 +8,7 @@ import {
   SpeakerXMarkIcon,
   ChevronUpIcon,
   CheckIcon,
+  ArrowPathRoundedSquareIcon,
 } from "@heroicons/react/24/solid";
 import { usePlayer } from "../context/PlayerContext";
 
@@ -22,7 +23,9 @@ const SurahPlayer: React.FC = () => {
     duration,
     volume,
     isMuted,
+    autoPlay,
     togglePlay,
+    toggleAutoPlay,
     changeReciter,
     seekTo,
     setVolume,
@@ -123,13 +126,13 @@ const SurahPlayer: React.FC = () => {
       <div className="flex items-center justify-between px-4 py-3 md:px-6 md:py-4">
         {/* Left: Track Info */}
         <div className="flex items-center gap-3 min-w-0 flex-1 md:flex-none md:w-1/4">
-          {/* Album Art / Surah Icon */}
+          {/* Album Art / Surah Icon - Hidden on mobile */}
           <div
-            className="w-12 h-12 md:w-14 md:h-14 rounded-lg flex items-center justify-center flex-shrink-0"
+            className="hidden md:flex w-14 h-14 rounded-lg items-center justify-center flex-shrink-0"
             style={{ backgroundColor: "var(--sidebar-selected)" }}
           >
             <span
-              className="text-lg md:text-xl font-bold"
+              className="text-xl font-bold"
               style={{ color: "var(--accent-color, #10b981)" }}
             >
               {currentSurah.number}
@@ -233,8 +236,7 @@ const SurahPlayer: React.FC = () => {
             {/* Previous */}
             <button
               onClick={playPrevious}
-              disabled={currentSurah.number <= 1}
-              className="p-2 rounded-full transition-colors hover:scale-105 disabled:opacity-40 disabled:cursor-not-allowed"
+              className="p-2 rounded-full transition-colors hover:scale-105"
               style={{ color: "var(--text-secondary)" }}
               aria-label="Previous"
             >
@@ -264,12 +266,24 @@ const SurahPlayer: React.FC = () => {
             {/* Next */}
             <button
               onClick={playNext}
-              disabled={currentSurah.number >= 114}
-              className="p-2 rounded-full transition-colors hover:scale-105 disabled:opacity-40 disabled:cursor-not-allowed"
+              className="p-2 rounded-full transition-colors hover:scale-105"
               style={{ color: "var(--text-secondary)" }}
               aria-label="Next"
             >
               <ForwardIcon className="w-5 h-5 md:w-6 md:h-6" />
+            </button>
+
+            {/* Auto-play Toggle */}
+            <button
+              onClick={toggleAutoPlay}
+              className="p-2 rounded-full transition-colors hover:scale-105"
+              style={{
+                color: autoPlay ? "var(--accent-color, #10b981)" : "var(--text-secondary)",
+              }}
+              aria-label={autoPlay ? "Disable auto-play" : "Enable auto-play"}
+              title={autoPlay ? "Auto-play: On" : "Auto-play: Off"}
+            >
+              <ArrowPathRoundedSquareIcon className="w-5 h-5 md:w-6 md:h-6" />
             </button>
           </div>
 

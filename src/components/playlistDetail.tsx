@@ -25,12 +25,16 @@ const PlaylistDetail: React.FC<PlaylistDetailProps> = ({
   surahs,
   onBack,
 }) => {
-  const { playSurah, currentSurah, isPlaying } = usePlayer();
+  const { playSurahFromPlaylist, currentSurah, isPlaying } = usePlayer();
 
   const handlePlayAll = () => {
     if (surahs.length > 0) {
-      playSurah(surahs[0]);
+      playSurahFromPlaylist(surahs[0], surahs);
     }
+  };
+
+  const handlePlaySurah = (surah: PlaylistSurah) => {
+    playSurahFromPlaylist(surah, surahs);
   };
 
   return (
@@ -123,7 +127,7 @@ const PlaylistDetail: React.FC<PlaylistDetailProps> = ({
             return (
               <div
                 key={surah.number}
-                onClick={() => playSurah(surah)}
+                onClick={() => handlePlaySurah(surah)}
                 className="group flex items-center gap-4 p-3 rounded-lg cursor-pointer transition-all"
                 style={{
                   backgroundColor: isCurrentlyPlaying

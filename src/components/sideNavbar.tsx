@@ -178,7 +178,10 @@ const SideNavbar = ({ onselectMenuItem }: SideNavbarProps) => {
                 onMouseLeave={(e) =>
                   (e.currentTarget.style.backgroundColor = "transparent")
                 }
-                onClick={toggleMobileMenu}
+                onClick={() => {
+                  onselectMenuItem && onselectMenuItem(item.label);
+                  toggleMobileMenu();
+                }}
               >
                 <item.icon
                   className="w-6 h-6 mr-4 group-hover:scale-110 transition-all duration-200"

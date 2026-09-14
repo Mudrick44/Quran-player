@@ -3,6 +3,7 @@ import {
   HomeIcon,
   BookOpenIcon,
   MicrophoneIcon,
+  QueueListIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
 interface SideNavbarProps {
@@ -16,6 +17,7 @@ const SideNavbar = ({ onselectMenuItem }: SideNavbarProps) => {
     { id: 1, label: "Listen Now", icon: HomeIcon },
     { id: 2, label: "Browse", icon: BookOpenIcon },
     { id: 3, label: "Reciters", icon: MicrophoneIcon },
+    { id: 4, label: "My Playlists", icon: QueueListIcon },
   ];
 
   const toggleMobileMenu = () => {

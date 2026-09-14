@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useRef, useEffect, ReactNode } from "react";
 
-interface SurahInfo {
+export interface SurahInfo {
   number: number;
   name: string;
   nameArabic: string;
@@ -34,6 +34,7 @@ interface PlayerContextType {
   isMuted: boolean;
   autoPlay: boolean;
   currentPlaylist: SurahInfo[] | null;
+  surahList: SurahInfo[];
   playSurah: (surah: SurahInfo) => void;
   playSurahFromPlaylist: (surah: SurahInfo, playlist: SurahInfo[]) => void;
   setPlaylist: (playlist: SurahInfo[] | null) => void;
@@ -370,6 +371,7 @@ export const PlayerProvider = ({ children }: PlayerProviderProps) => {
         isMuted,
         autoPlay,
         currentPlaylist,
+        surahList: allSurahs,
         playSurah,
         playSurahFromPlaylist,
         setPlaylist,

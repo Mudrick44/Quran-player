@@ -1,8 +1,8 @@
 interface PlaylistProps {
   mainTitle: string;
   subtitle: string;
-  description: string;
-  imageSrc: string;
+  description?: string;
+  imageSrc?: string;
   onClick?: () => void;
 }
 
@@ -33,11 +33,30 @@ const Playlist = ({
 
       {/* Visual Card */}
       <div className="relative mb-3 overflow-hidden rounded-lg shadow-lg">
-        <img
-          src={imageSrc}
-          alt={mainTitle}
-          className="w-full h-64 object-cover"
-        />
+        {imageSrc ? (
+          <img
+            src={imageSrc}
+            alt={mainTitle}
+            className="w-full h-64 object-cover"
+          />
+        ) : (
+          // Fallback artwork for playlists without curated cover art (e.g. user-created playlists)
+          <div
+            className="w-full h-64 flex items-center justify-center"
+            style={{
+              background:
+                "linear-gradient(135deg, var(--accent-primary), var(--sidebar-selected))",
+            }}
+          >
+            <svg
+              className="w-16 h-16 text-white opacity-70"
+              fill="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path d="M12 3v10.55A4 4 0 1 0 14 17V7h4V3h-6z" />
+            </svg>
+          </div>
+        )}
 
         {/* Play Button - Bottom Right Corner */}
         <div className="absolute bottom-3 right-3">
@@ -53,15 +72,17 @@ const Playlist = ({
         </div>
 
         {/* Descriptive Text Overlay - Bottom of Image */}
-        <div
-          className="absolute bottom-0 left-0 right-0 p-4"
-          style={{
-            background:
-              "linear-gradient(to top, var(--overlay), rgba(0,0,0,0.2), transparent)",
-          }}
-        >
-          <p className="text-sm leading-relaxed text-white">{description}</p>
-        </div>
+        {description && (
+          <div
+            className="absolute bottom-0 left-0 right-0 p-4"
+            style={{
+              background:
+                "linear-gradient(to top, var(--overlay), rgba(0,0,0,0.2), transparent)",
+            }}
+          >
+            <p className="text-sm leading-relaxed text-white">{description}</p>
+          </div>
+        )}
       </div>
     </div>
   );

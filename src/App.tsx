@@ -4,10 +4,12 @@ import Playlist from "./components/playlist";
 import Surah from "./components/surah";
 import RecitersSection from "./components/recitersSection";
 import PlaylistDetail from "./components/playlistDetail";
+import MyPlaylistsPage from "./components/myPlaylistsPage";
 import { useState, useEffect } from "react";
 import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
 import SurahPlayer from "./components/surahPlayer";
 import { PlayerProvider, usePlayer } from "./context/PlayerContext";
+import { PlaylistsProvider } from "./context/PlaylistsContext";
 
 // Import images so Vite can bundle them
 import quran3Image from "./assets/quran3.png";
@@ -80,6 +82,9 @@ const App: React.FC = () => {
 
   const handleMenuItemSelect = (item: string) => {
     console.log(`Menu item selected: ${item}`);
+    // Clear any open curated playlist so it doesn't keep rendering
+    // underneath whichever tab the user just switched to
+    setSelectedPlaylist(null);
     setCurrentPageMain(item);
   };
 
@@ -147,6 +152,11 @@ const App: React.FC = () => {
             {/* SHOW RECITERS PAGE     */}
             {/* ---------------------- */}
             {currentPagemain === "Reciters" && <RecitersSection />}
+
+            {/* ---------------------- */}
+            {/* SHOW MY PLAYLISTS PAGE */}
+            {/* ---------------------- */}
+            {currentPagemain === "My Playlists" && <MyPlaylistsPage />}
 
             {/* ---------------------- */}
             {/* SHOW PLAYLIST DETAIL   */}
@@ -324,7 +334,9 @@ const App: React.FC = () => {
 const AppWithProvider: React.FC = () => {
   return (
     <PlayerProvider>
-      <App />
+      <PlaylistsProvider>
+        <App />
+      </PlaylistsProvider>
     </PlayerProvider>
   );
 };

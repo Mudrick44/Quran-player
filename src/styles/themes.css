@@ -16,7 +16,7 @@
   --shadow: rgba(0, 0, 0, 0.1);
   --overlay: rgba(0, 0, 0, 0.6);
   --sidebar-bg: rgba(235,235,245,.03);
-  --sidebar-selected: rgba(235,235,245,.1);
+  --sidebar-selected: rgba(0, 0, 0, 0.06);
 }
 
 [data-theme='dark'] {

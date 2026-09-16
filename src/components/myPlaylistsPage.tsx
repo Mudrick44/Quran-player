@@ -57,7 +57,7 @@ const MyPlaylistsPage: React.FC = () => {
         <button
           onClick={openCreate}
           className="flex items-center gap-2 px-4 py-2 rounded-full font-semibold transition-all hover:scale-105"
-          style={{ backgroundColor: "var(--accent-color, #10b981)", color: "white" }}
+          style={{ backgroundColor: "var(--accent-primary)", color: "white" }}
         >
           <PlusIcon className="w-5 h-5" />
           New Playlist
@@ -77,7 +77,7 @@ const MyPlaylistsPage: React.FC = () => {
           <button
             onClick={openCreate}
             className="px-5 py-2 rounded-full font-semibold transition-all hover:scale-105"
-            style={{ backgroundColor: "var(--accent-color, #10b981)", color: "white" }}
+            style={{ backgroundColor: "var(--accent-primary)", color: "white" }}
           >
             Create Playlist
           </button>

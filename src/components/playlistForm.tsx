@@ -158,7 +158,7 @@ const PlaylistForm: React.FC<PlaylistFormProps> = ({
                   className="w-5 h-5 rounded flex items-center justify-center flex-shrink-0"
                   style={{
                     backgroundColor: isSelected
-                      ? "var(--accent-color, #10b981)"
+                      ? "var(--accent-primary)"
                       : "transparent",
                     border: isSelected ? "none" : "1px solid var(--text-tertiary)",
                   }}
@@ -207,7 +207,7 @@ const PlaylistForm: React.FC<PlaylistFormProps> = ({
           onClick={handleSave}
           disabled={!canSave}
           className="px-6 py-3 rounded-full font-semibold transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-          style={{ backgroundColor: "var(--accent-color, #10b981)", color: "white" }}
+          style={{ backgroundColor: "var(--accent-primary)", color: "white" }}
         >
           Save Playlist
         </button>

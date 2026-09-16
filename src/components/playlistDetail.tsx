@@ -1,5 +1,6 @@
 import { PlayIcon, ArrowLeftIcon } from "@heroicons/react/24/solid";
 import { usePlayer } from "../context/PlayerContext";
+import SurahListRow from "./surahListRow";
 
 interface PlaylistSurah {
   number: number;
@@ -100,7 +101,7 @@ const PlaylistDetail: React.FC<PlaylistDetailProps> = ({
             onClick={handlePlayAll}
             className="mt-4 flex items-center gap-2 px-6 py-3 rounded-full font-semibold transition-all hover:scale-105"
             style={{
-              backgroundColor: "var(--accent-color, #10b981)",
+              backgroundColor: "var(--accent-primary)",
               color: "white",
             }}
           >
@@ -120,116 +121,17 @@ const PlaylistDetail: React.FC<PlaylistDetailProps> = ({
         </h2>
 
         <div className="space-y-1">
-          {surahs.map((surah, index) => {
-            const isCurrentlyPlaying =
-              currentSurah?.number === surah.number && isPlaying;
-
-            return (
-              <div
-                key={surah.number}
-                onClick={() => handlePlaySurah(surah)}
-                className="group flex items-center gap-4 p-3 rounded-lg cursor-pointer transition-all"
-                style={{
-                  backgroundColor: isCurrentlyPlaying
-                    ? "var(--sidebar-selected)"
-                    : "transparent",
-                }}
-                onMouseEnter={(e) => {
-                  if (!isCurrentlyPlaying) {
-                    e.currentTarget.style.backgroundColor =
-                      "var(--sidebar-selected)";
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!isCurrentlyPlaying) {
-                    e.currentTarget.style.backgroundColor = "transparent";
-                  }
-                }}
-              >
-                {/* Track Number / Play Icon */}
-                <div
-                  className="w-8 h-8 flex items-center justify-center flex-shrink-0"
-                  style={{ color: "var(--text-secondary)" }}
-                >
-                  <span className="group-hover:hidden text-sm">
-                    {index + 1}
-                  </span>
-                  <PlayIcon className="w-4 h-4 hidden group-hover:block" />
-                </div>
-
-                {/* Surah Number Badge */}
-                <div
-                  className="w-10 h-10 rounded-md flex items-center justify-center flex-shrink-0 text-sm font-semibold"
-                  style={{
-                    backgroundColor: isCurrentlyPlaying
-                      ? "var(--accent-color, #10b981)"
-                      : "var(--sidebar-selected)",
-                    color: isCurrentlyPlaying
-                      ? "white"
-                      : "var(--text-primary)",
-                  }}
-                >
-                  {surah.number}
-                </div>
-
-                {/* Surah Info */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <h4
-                      className="font-medium truncate"
-                      style={{
-                        color: isCurrentlyPlaying
-                          ? "var(--accent-color, #10b981)"
-                          : "var(--text-primary)",
-                      }}
-                    >
-                      {surah.name}
-                    </h4>
-                    <span
-                      className="text-base font-arabic"
-                      style={{
-                        color: isCurrentlyPlaying
-                          ? "var(--accent-color, #10b981)"
-                          : "var(--text-primary)",
-                      }}
-                    >
-                      {surah.nameArabic}
-                    </span>
-                  </div>
-                  <p
-                    className="text-sm"
-                    style={{ color: "var(--text-secondary)" }}
-                  >
-                    {surah.totalAyah} verses
-                  </p>
-                </div>
-
-                {/* Playing Indicator */}
-                {isCurrentlyPlaying && (
-                  <div className="flex items-center gap-1 mr-2">
-                    <div
-                      className="w-1 h-3 rounded-full animate-pulse"
-                      style={{ backgroundColor: "var(--accent-color, #10b981)" }}
-                    />
-                    <div
-                      className="w-1 h-4 rounded-full animate-pulse"
-                      style={{
-                        backgroundColor: "var(--accent-color, #10b981)",
-                        animationDelay: "0.2s",
-                      }}
-                    />
-                    <div
-                      className="w-1 h-2 rounded-full animate-pulse"
-                      style={{
-                        backgroundColor: "var(--accent-color, #10b981)",
-                        animationDelay: "0.4s",
-                      }}
-                    />
-                  </div>
-                )}
-              </div>
-            );
-          })}
+          {surahs.map((surah, index) => (
+            <SurahListRow
+              key={surah.number}
+              index={index}
+              surah={surah}
+              isCurrentlyPlaying={
+                currentSurah?.number === surah.number && isPlaying
+              }
+              onPlay={() => handlePlaySurah(surah)}
+            />
+          ))}
         </div>
       </div>
     </div>

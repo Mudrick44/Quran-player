@@ -4,11 +4,11 @@ import {
   ArrowLeftIcon,
   PencilSquareIcon,
   TrashIcon,
-  XMarkIcon,
 } from "@heroicons/react/24/solid";
 import { usePlayer } from "../context/PlayerContext";
 import { useCustomPlaylists } from "../context/PlaylistsContext";
 import type { CustomPlaylist } from "../context/PlaylistsContext";
+import SurahListRow from "./surahListRow";
 
 interface CustomPlaylistDetailProps {
   playlist: CustomPlaylist;
@@ -157,106 +157,25 @@ const CustomPlaylistDetail: React.FC<CustomPlaylistDetailProps> = ({
             <button
               onClick={onEdit}
               className="px-5 py-2 rounded-full font-semibold transition-all hover:scale-105"
-              style={{ backgroundColor: "var(--accent-color, #10b981)", color: "white" }}
+              style={{ backgroundColor: "var(--accent-primary)", color: "white" }}
             >
               Add Surahs
             </button>
           </div>
         ) : (
           <div className="space-y-1">
-            {surahs.map((surah, index) => {
-              const isCurrentlyPlaying =
-                currentSurah?.number === surah.number && isPlaying;
-
-              return (
-                <div
-                  key={surah.number}
-                  className="group flex items-center gap-4 p-3 rounded-lg cursor-pointer transition-all"
-                  style={{
-                    backgroundColor: isCurrentlyPlaying
-                      ? "var(--sidebar-selected)"
-                      : "transparent",
-                  }}
-                  onClick={() => handlePlaySurah(surah)}
-                  onMouseEnter={(e) => {
-                    if (!isCurrentlyPlaying) {
-                      e.currentTarget.style.backgroundColor =
-                        "var(--sidebar-selected)";
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isCurrentlyPlaying) {
-                      e.currentTarget.style.backgroundColor = "transparent";
-                    }
-                  }}
-                >
-                  {/* Track Number / Play Icon */}
-                  <div
-                    className="w-8 h-8 flex items-center justify-center flex-shrink-0"
-                    style={{ color: "var(--text-secondary)" }}
-                  >
-                    <span className="group-hover:hidden text-sm">{index + 1}</span>
-                    <PlayIcon className="w-4 h-4 hidden group-hover:block" />
-                  </div>
-
-                  {/* Surah Number Badge */}
-                  <div
-                    className="w-10 h-10 rounded-md flex items-center justify-center flex-shrink-0 text-sm font-semibold"
-                    style={{
-                      backgroundColor: isCurrentlyPlaying
-                        ? "var(--accent-color, #10b981)"
-                        : "var(--sidebar-selected)",
-                      color: isCurrentlyPlaying ? "white" : "var(--text-primary)",
-                    }}
-                  >
-                    {surah.number}
-                  </div>
-
-                  {/* Surah Info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <h4
-                        className="font-medium truncate"
-                        style={{
-                          color: isCurrentlyPlaying
-                            ? "var(--accent-color, #10b981)"
-                            : "var(--text-primary)",
-                        }}
-                      >
-                        {surah.name}
-                      </h4>
-                      <span
-                        className="text-base font-arabic"
-                        style={{
-                          color: isCurrentlyPlaying
-                            ? "var(--accent-color, #10b981)"
-                            : "var(--text-primary)",
-                        }}
-                      >
-                        {surah.nameArabic}
-                      </span>
-                    </div>
-                    <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
-                      {surah.totalAyah} verses
-                    </p>
-                  </div>
-
-                  {/* Remove from playlist */}
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      removeSurahFromPlaylist(playlist.id, surah.number);
-                    }}
-                    className="p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
-                    style={{ color: "var(--text-secondary)" }}
-                    aria-label={`Remove ${surah.name} from playlist`}
-                    title="Remove from playlist"
-                  >
-                    <XMarkIcon className="w-4 h-4" />
-                  </button>
-                </div>
-              );
-            })}
+            {surahs.map((surah, index) => (
+              <SurahListRow
+                key={surah.number}
+                index={index}
+                surah={surah}
+                isCurrentlyPlaying={
+                  currentSurah?.number === surah.number && isPlaying
+                }
+                onPlay={() => handlePlaySurah(surah)}
+                onRemove={() => removeSurahFromPlaylist(playlist.id, surah.number)}
+              />
+            ))}
           </div>
         )}
       </div>

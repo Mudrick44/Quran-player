@@ -44,7 +44,7 @@ const App: React.FC = () => {
   const [currentPagemain, setCurrentPageMain] = useState("Home");
   const [selectedPlaylist, setSelectedPlaylist] = useState<PlaylistData | null>(null);
 
-  const { playSurah, setSurahList, setPlaylist } = usePlayer();
+  const { playSurah, setSurahList, setPlaylist, currentSurah, isPlaying } = usePlayer();
 
   useEffect(() => {
     const fetchSurahs = async () => {
@@ -304,6 +304,8 @@ const App: React.FC = () => {
                             key={surahNumber}
                             number={surahNumber}
                             data={surah}
+                            isActive={currentSurah?.number === surahNumber}
+                            isPlaying={isPlaying}
                             onClick={() => {
                               // Clear playlist context when playing from Quick Picks (sequential mode)
                               setPlaylist(null);

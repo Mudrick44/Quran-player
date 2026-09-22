@@ -26,7 +26,7 @@ const PlaylistDetail: React.FC<PlaylistDetailProps> = ({
   surahs,
   onBack,
 }) => {
-  const { playSurahFromPlaylist, currentSurah, isPlaying } = usePlayer();
+  const { playSurahFromPlaylist, currentSurah } = usePlayer();
 
   const handlePlayAll = () => {
     if (surahs.length > 0) {
@@ -126,9 +126,7 @@ const PlaylistDetail: React.FC<PlaylistDetailProps> = ({
               key={surah.number}
               index={index}
               surah={surah}
-              isCurrentlyPlaying={
-                currentSurah?.number === surah.number && isPlaying
-              }
+              isActive={currentSurah?.number === surah.number}
               onPlay={() => handlePlaySurah(surah)}
             />
           ))}

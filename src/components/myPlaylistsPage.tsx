@@ -2,7 +2,7 @@ import { useState } from "react";
 import { PlusIcon, MusicalNoteIcon } from "@heroicons/react/24/outline";
 import { useCustomPlaylists } from "../context/PlaylistsContext";
 import type { CustomPlaylist } from "../context/PlaylistsContext";
-import Playlist from "./playlist";
+import CustomPlaylistCard from "./customPlaylistCard";
 import PlaylistForm from "./playlistForm";
 import CustomPlaylistDetail from "./customPlaylistDetail";
 
@@ -85,12 +85,9 @@ const MyPlaylistsPage: React.FC = () => {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
           {playlists.map((playlist) => (
-            <Playlist
+            <CustomPlaylistCard
               key={playlist.id}
-              mainTitle={playlist.name}
-              subtitle={`${playlist.surahNumbers.length} surah${
-                playlist.surahNumbers.length === 1 ? "" : "s"
-              }`}
+              playlist={playlist}
               onClick={() => {
                 setActiveId(playlist.id);
                 setView("detail");

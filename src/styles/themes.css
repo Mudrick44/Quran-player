@@ -47,3 +47,74 @@
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+/* ---------- Player ---------- */
+
+/* Range inputs used by the volume slider (the seek bar is invisible on purpose) */
+.player-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 9999px;
+  background: var(--text-primary);
+  cursor: pointer;
+}
+
+.player-range::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border: none;
+  border-radius: 9999px;
+  background: var(--text-primary);
+  cursor: pointer;
+}
+
+/*
+ * Sheets and drawers animate via transform transitions in JS (see
+ * hooks/usePresence.ts) so a swipe can interrupt them. Only the in-place
+ * panel swap is a keyframe, since it has nothing to interrupt.
+ */
+@keyframes panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-panel-in {
+  animation: panel-in 0.26s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-panel-in {
+    animation: none;
+  }
+}
+
+/* Equalizer bars for the active track in list views */
+@keyframes eq-bar {
+  0%,
+  100% {
+    transform: scaleY(0.3);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+.eq-bar {
+  transform-origin: bottom center;
+  animation-name: eq-bar;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .eq-bar {
+    animation: none;
+  }
+}

@@ -9,6 +9,7 @@ import { usePlayer } from "../context/PlayerContext";
 import { useCustomPlaylists } from "../context/PlaylistsContext";
 import type { CustomPlaylist } from "../context/PlaylistsContext";
 import SurahListRow from "./surahListRow";
+import { usePlaylistCover } from "../hooks/usePlaylistCover";
 
 interface CustomPlaylistDetailProps {
   playlist: CustomPlaylist;
@@ -21,9 +22,10 @@ const CustomPlaylistDetail: React.FC<CustomPlaylistDetailProps> = ({
   onBack,
   onEdit,
 }) => {
-  const { surahList, playSurahFromPlaylist, currentSurah, isPlaying } = usePlayer();
+  const { surahList, playSurahFromPlaylist, currentSurah } = usePlayer();
   const { removeSurahFromPlaylist, deletePlaylist } = useCustomPlaylists();
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const { src: cover } = usePlaylistCover(playlist);
 
   // Resolve surah numbers to full metadata, preserving the playlist's order
   const surahs = playlist.surahNumbers
@@ -50,12 +52,30 @@ const CustomPlaylistDetail: React.FC<CustomPlaylistDetailProps> = ({
       {/* Header */}
       <div className="relative overflow-hidden rounded-xl mb-8">
         <div
-          className="h-[220px] md:h-[280px] flex items-end p-6 md:p-8"
+          className="relative h-[220px] md:h-[280px] flex items-end p-6 md:p-8"
           style={{
+            // Stays visible for an empty playlist, and while the cover loads
             background:
               "linear-gradient(135deg, var(--accent-primary), var(--sidebar-selected))",
           }}
         >
+          {cover && (
+            <>
+              <div
+                className="absolute inset-0 bg-cover bg-center"
+                style={{ backgroundImage: `url(${cover})` }}
+              />
+              {/* Scrim: the banner text sits on artwork, so it needs contrast */}
+              <div
+                className="absolute inset-0"
+                style={{
+                  background:
+                    "linear-gradient(to top, rgba(0,0,0,.85) 0%, rgba(0,0,0,.4) 55%, rgba(0,0,0,.5) 100%)",
+                }}
+              />
+            </>
+          )}
+
           <button
             onClick={onBack}
             className="absolute top-4 left-4 p-2 rounded-full backdrop-blur-sm transition-all hover:scale-105"
@@ -85,7 +105,7 @@ const CustomPlaylistDetail: React.FC<CustomPlaylistDetailProps> = ({
             </button>
           </div>
 
-          <div>
+          <div className="relative">
             <p className="text-sm uppercase tracking-wider mb-2 font-medium text-white opacity-80">
               Your Playlist
             </p>
@@ -169,9 +189,7 @@ const CustomPlaylistDetail: React.FC<CustomPlaylistDetailProps> = ({
                 key={surah.number}
                 index={index}
                 surah={surah}
-                isCurrentlyPlaying={
-                  currentSurah?.number === surah.number && isPlaying
-                }
+                isActive={currentSurah?.number === surah.number}
                 onPlay={() => handlePlaySurah(surah)}
                 onRemove={() => removeSurahFromPlaylist(playlist.id, surah.number)}
               />

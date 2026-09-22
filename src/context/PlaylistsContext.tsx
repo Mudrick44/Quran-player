@@ -1,9 +1,15 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
 
 export interface CustomPlaylist {
   id: string;
   name: string;
   surahNumbers: number[];
+  /**
+   * Resolved cover art URL, persisted so the banner survives an API outage or
+   * an offline session. Derived from the first surah — cleared whenever that
+   * changes so it gets re-resolved.
+   */
+  coverImage?: string;
   createdAt: number;
   updatedAt: number;
 }
@@ -26,6 +32,7 @@ interface PlaylistsContextType {
   playlists: CustomPlaylist[];
   getPlaylist: (id: string) => CustomPlaylist | undefined;
   createPlaylist: (name: string, surahNumbers: number[]) => CustomPlaylist;
+  setPlaylistCover: (id: string, coverImage: string) => void;
   renamePlaylist: (id: string, name: string) => void;
   updatePlaylistSurahs: (id: string, surahNumbers: number[]) => void;
   removeSurahFromPlaylist: (id: string, surahNumber: number) => void;
@@ -77,11 +84,36 @@ export const PlaylistsProvider = ({ children }: PlaylistsProviderProps) => {
     );
   };
 
+  /**
+   * The cover is derived from the first surah, so drop it when that changes
+   * and let it be resolved again.
+   */
+  const withRefreshedCover = (
+    playlist: CustomPlaylist,
+    surahNumbers: number[]
+  ): CustomPlaylist => {
+    const coverStillValid = playlist.surahNumbers[0] === surahNumbers[0];
+    return {
+      ...playlist,
+      surahNumbers,
+      coverImage: coverStillValid ? playlist.coverImage : undefined,
+      updatedAt: Date.now(),
+    };
+  };
+
+  /**
+   * Cached artwork, not a user edit — deliberately leaves `updatedAt` alone.
+   * Memoised because usePlaylistCover depends on it inside an effect.
+   */
+  const setPlaylistCover = useCallback((id: string, coverImage: string) => {
+    setPlaylists((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, coverImage } : p))
+    );
+  }, []);
+
   const updatePlaylistSurahs = (id: string, surahNumbers: number[]) => {
     setPlaylists((prev) =>
-      prev.map((p) =>
-        p.id === id ? { ...p, surahNumbers, updatedAt: Date.now() } : p
-      )
+      prev.map((p) => (p.id === id ? withRefreshedCover(p, surahNumbers) : p))
     );
   };
 
@@ -89,11 +121,10 @@ export const PlaylistsProvider = ({ children }: PlaylistsProviderProps) => {
     setPlaylists((prev) =>
       prev.map((p) =>
         p.id === id
-          ? {
-              ...p,
-              surahNumbers: p.surahNumbers.filter((n) => n !== surahNumber),
-              updatedAt: Date.now(),
-            }
+          ? withRefreshedCover(
+              p,
+              p.surahNumbers.filter((n) => n !== surahNumber)
+            )
           : p
       )
     );
@@ -109,6 +140,7 @@ export const PlaylistsProvider = ({ children }: PlaylistsProviderProps) => {
         playlists,
         getPlaylist,
         createPlaylist,
+        setPlaylistCover,
         renamePlaylist,
         updatePlaylistSurahs,
         removeSurahFromPlaylist,

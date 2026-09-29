@@ -6,7 +6,7 @@ const TopNavbar = () => {
 
   return (
     <div
-      className="fixed top-0 right-0 z-40 h-16 flex items-center justify-end px-6 md:left-[260px] left-0"
+      className="fixed top-0 right-0 z-40 h-[calc(4rem+env(safe-area-inset-top))] pt-[env(safe-area-inset-top)] flex items-center justify-end px-6 md:left-[260px] left-0"
       style={{
         backgroundColor: "var(--bg-secondary)",
         borderBottom: "1px solid var(--border-secondary)",

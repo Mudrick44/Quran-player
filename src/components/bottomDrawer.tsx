@@ -87,7 +87,7 @@ const BottomDrawer: React.FC<BottomDrawerProps> = ({
           )}
         </div>
 
-        <div className="flex-1 min-h-0 overflow-y-auto px-3 pt-2 pb-8 scrollbar-hide">
+        <div className="flex-1 min-h-0 overflow-y-auto px-3 pt-2 pb-[calc(2rem+env(safe-area-inset-bottom))] scrollbar-hide">
           {children}
         </div>
       </div>

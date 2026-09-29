@@ -1,1 +1,47 @@
 @import "tailwindcss";
+
+/* ---------- App shell ---------- */
+
+html {
+  -webkit-text-size-adjust: 100%;
+  /* No grey flash on tap, as in a native app */
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+  background-color: var(--bg-primary);
+  /* No rubber-band bounce or pull-to-refresh on the page itself */
+  overscroll-behavior-y: none;
+}
+
+/* Removes the double-tap-to-zoom delay while keeping pinch zoom */
+html,
+body,
+a,
+button,
+input,
+label,
+[role="button"] {
+  touch-action: manipulation;
+}
+
+/* No drag ghost or long-press "Save Image" sheet on artwork */
+img {
+  -webkit-user-drag: none;
+  -webkit-touch-callout: none;
+}
+
+/* Launched from the home screen: behave like an app, not a document */
+@media (display-mode: standalone) {
+  body {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  input,
+  textarea {
+    -webkit-user-select: text;
+    user-select: text;
+  }
+}

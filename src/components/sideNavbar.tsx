@@ -6,6 +6,8 @@ import {
   QueueListIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
+import { HeartIcon } from "@heroicons/react/24/solid";
+import quranIcon from "../assets/quran-rehal-svgrepo-com.svg";
 interface SideNavbarProps {
   onselectMenuItem?: (item: string) => void;
 }
@@ -27,7 +29,7 @@ const SideNavbar = ({ onselectMenuItem }: SideNavbarProps) => {
   return (
     <>
       {/* Mobile Hamburger Button */}
-      <div className="md:hidden fixed top-4 left-4 z-50">
+      <div className="md:hidden fixed top-[calc(1rem+env(safe-area-inset-top))] left-4 z-50">
         <button onClick={toggleMobileMenu} className="p-2">
           {isMobileMenuOpen ? (
             <XMarkIcon
@@ -51,7 +53,7 @@ const SideNavbar = ({ onselectMenuItem }: SideNavbarProps) => {
 
       {/* Sidebar - Desktop */}
       <div
-        className="hidden md:flex fixed top-0 left-0 h-screen w-[260px] flex-col z-30"
+        className="hidden md:flex fixed top-0 left-0 h-screen w-[260px] flex-col z-30 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]"
         style={{
           backgroundColor: "var(--sidebar-bg)",
           borderRight: "2px solid var(--border-secondary)",
@@ -60,7 +62,7 @@ const SideNavbar = ({ onselectMenuItem }: SideNavbarProps) => {
         {/* Header */}
         <div className="ps-[30px] pe-[30px] pt-[17px] pb-[17px] min-h-[50px] flex flex-row justify-cente gap-2">
           <img
-            src="/src/assets/quran-rehal-svgrepo-com.svg"
+            src={quranIcon}
             alt="quran icon"
             className="w-8 h-8"
           />
@@ -113,10 +115,16 @@ const SideNavbar = ({ onselectMenuItem }: SideNavbarProps) => {
           <div style={{ borderTop: "1px solid var(--border-secondary)" }}></div>
           <div className="ps-[30px] pe-[30px] py-4">
             <p
-              className="text-sm text-center"
+              className="text-sm flex items-center justify-center gap-1.5"
               style={{ color: "var(--text-secondary)" }}
             >
-              Made with ❤️ by Mudrick
+              Made with
+              <HeartIcon
+                className="w-4 h-4"
+                style={{ color: "var(--accent-primary)" }}
+                aria-label="love"
+              />
+              by Mudrick
             </p>
           </div>
         </div>
@@ -124,7 +132,7 @@ const SideNavbar = ({ onselectMenuItem }: SideNavbarProps) => {
 
       {/* Mobile Menu - Slides from top */}
       <div
-        className={`md:hidden fixed top-0 left-0 right-0 bottom-0 h-screen z-50 transform transition-transform duration-300 ease-in-out ${
+        className={`md:hidden fixed inset-0 z-50 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] transform transition-transform duration-300 ease-in-out ${
           isMobileMenuOpen ? "translate-y-0" : "-translate-y-full"
         }`}
         style={{ backgroundColor: "var(--bg-card)" }}
@@ -204,10 +212,16 @@ const SideNavbar = ({ onselectMenuItem }: SideNavbarProps) => {
         <div style={{ borderTop: "1px solid var(--border-secondary)" }}>
           <div className="ps-[30px] pe-[30px] py-4">
             <p
-              className="text-sm text-center"
+              className="text-sm flex items-center justify-center gap-1.5"
               style={{ color: "var(--text-secondary)" }}
             >
-              Made with ❤️ by Mudrick
+              Made with
+              <HeartIcon
+                className="w-4 h-4"
+                style={{ color: "var(--accent-primary)" }}
+                aria-label="love"
+              />
+              by Mudrick
             </p>
           </div>
         </div>

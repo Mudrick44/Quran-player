@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useRef, useEffect, ReactNode } from "react";
+import { useMediaSession } from "../hooks/useMediaSession";
 
 export interface SurahInfo {
   number: number;
@@ -355,6 +356,19 @@ export const PlayerProvider = ({ children }: PlayerProviderProps) => {
       }
     }
   };
+
+  // Declared after the audio element is created, so it can attach to it
+  useMediaSession({
+    audioRef,
+    currentSurah,
+    reciterName: currentReciter.name,
+    isPlaying,
+    play,
+    pause,
+    playNext,
+    playPrevious,
+    seekTo,
+  });
 
   return (
     <PlayerContext.Provider

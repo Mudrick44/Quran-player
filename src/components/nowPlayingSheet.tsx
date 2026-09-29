@@ -105,7 +105,7 @@ const NowPlayingSheet: React.FC<NowPlayingSheetProps> = ({ isOpen, onClose }) =>
       aria-label="Now playing"
     >
       {/* ---------- Header / drag handle ---------- */}
-      <div className="flex-shrink-0 px-4 pt-3 pb-1" {...handlers}>
+      <div className="flex-shrink-0 px-4 pt-[calc(0.75rem+env(safe-area-inset-top))] pb-1" {...handlers}>
         <div
           className="mx-auto w-10 h-1 rounded-full mb-3"
           style={{ backgroundColor: "var(--text-tertiary)" }}
@@ -188,7 +188,7 @@ const NowPlayingSheet: React.FC<NowPlayingSheetProps> = ({ isOpen, onClose }) =>
       </div>
 
       {/* ---------- Controls (persist across panels) ---------- */}
-      <div className="flex-shrink-0 px-6 pt-5 pb-8">
+      <div className="flex-shrink-0 px-6 pt-5 pb-[calc(2rem+env(safe-area-inset-bottom))]">
         {/* Track info */}
         <div className="flex items-center justify-between gap-3 mb-4">
           <div className="min-w-0">

@@ -12,9 +12,9 @@ import { PlayerProvider, usePlayer } from "./context/PlayerContext";
 import { PlaylistsProvider } from "./context/PlaylistsContext";
 
 // Import images so Vite can bundle them
-import quran3Image from "./assets/quran3.png";
-import quran4Image from "./assets/quran4.png";
-import quran5Image from "./assets/quran5.png";
+import quran3Image from "./assets/quran3.webp";
+import quran4Image from "./assets/quran4.webp";
+import quran5Image from "./assets/quran5.webp";
 
 interface SurahData {
   surahName: string;
@@ -145,7 +145,7 @@ const App: React.FC = () => {
 
       <TopNavbar />
       <div className="flex-1 flex flex-col overflow-x-hidden md:ml-[260px]">
-        <main className="flex-1 px-8 py-6 pt-20 pb-28 overflow-y-auto">
+        <main className="flex-1 px-8 py-6 pt-[calc(5rem+env(safe-area-inset-top))] pb-[calc(7rem+env(safe-area-inset-bottom))] overflow-y-auto">
 
           <div className="max-w-7xl">
             {/* ---------------------- */}

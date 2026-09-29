@@ -5,22 +5,42 @@ import {
   MicrophoneIcon,
   QueueListIcon,
   XMarkIcon,
+  ArrowDownTrayIcon,
 } from "@heroicons/react/24/outline";
 import { HeartIcon } from "@heroicons/react/24/solid";
 import quranIcon from "../assets/quran-rehal-svgrepo-com.svg";
 interface SideNavbarProps {
   onselectMenuItem?: (item: string) => void;
+  /** Shown as a menu item only when the app can be installed on this device. */
+  onInstallApp?: () => void;
 }
 
-const SideNavbar = ({ onselectMenuItem }: SideNavbarProps) => {
+interface NavItem {
+  id: number;
+  label: string;
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+  /** An action instead of a page to navigate to. */
+  onSelect?: () => void;
+}
+
+const SideNavbar = ({ onselectMenuItem, onInstallApp }: SideNavbarProps) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  const navItems = [
+  const navItems: NavItem[] = [
     { id: 1, label: "Listen Now", icon: HomeIcon },
     { id: 2, label: "Browse", icon: BookOpenIcon },
     { id: 3, label: "Reciters", icon: MicrophoneIcon },
     { id: 4, label: "My Playlists", icon: QueueListIcon },
   ];
+
+  if (onInstallApp) {
+    navItems.push({ id: 5, label: "Install App", icon: ArrowDownTrayIcon, onSelect: onInstallApp });
+  }
+
+  const selectItem = (item: NavItem) => {
+    if (item.onSelect) item.onSelect();
+    else onselectMenuItem?.(item.label);
+  };
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -80,7 +100,7 @@ const SideNavbar = ({ onselectMenuItem }: SideNavbarProps) => {
             return (
               <div
                 key={item.id}
-                onClick={() => onselectMenuItem && onselectMenuItem(item.label)}
+                onClick={() => selectItem(item)}
                 className="flex items-center ps-[30px] pe-[30px] py-3 cursor-pointer transition-colors duration-200 group hover:bg-opacity-50"
                 style={
                   {
@@ -132,7 +152,7 @@ const SideNavbar = ({ onselectMenuItem }: SideNavbarProps) => {
 
       {/* Mobile Menu - Slides from top */}
       <div
-        className={`md:hidden fixed inset-0 z-50 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] transform transition-transform duration-300 ease-in-out ${
+        className={`md:hidden fixed inset-0 z-[55] pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] transform transition-transform duration-300 ease-in-out ${
           isMobileMenuOpen ? "translate-y-0" : "-translate-y-full"
         }`}
         style={{ backgroundColor: "var(--bg-card)" }}
@@ -189,7 +209,7 @@ const SideNavbar = ({ onselectMenuItem }: SideNavbarProps) => {
                   (e.currentTarget.style.backgroundColor = "transparent")
                 }
                 onClick={() => {
-                  onselectMenuItem && onselectMenuItem(item.label);
+                  selectItem(item);
                   toggleMobileMenu();
                 }}
               >

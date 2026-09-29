@@ -8,6 +8,9 @@ import MyPlaylistsPage from "./components/myPlaylistsPage";
 import { useState, useEffect } from "react";
 import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
 import SurahPlayer from "./components/surahPlayer";
+import InstallAppSheet from "./components/installAppSheet";
+import { useInstallPrompt } from "./hooks/useInstallPrompt";
+import { useIsDesktop } from "./hooks/useMediaQuery";
 import { PlayerProvider, usePlayer } from "./context/PlayerContext";
 import { PlaylistsProvider } from "./context/PlaylistsContext";
 
@@ -34,6 +37,9 @@ interface PlaylistData {
   surahNumbers: number[]; // Surah numbers included in this playlist
 }
 
+const INSTALL_DISMISSED_KEY = "quranPlayer.installPrompt.dismissedAt";
+const INSTALL_SNOOZE = 14 * 24 * 60 * 60 * 1000; // 14 days
+
 const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [surahs, setSurahs] = useState<SurahData[]>([]);
@@ -45,6 +51,40 @@ const App: React.FC = () => {
   const [selectedPlaylist, setSelectedPlaylist] = useState<PlaylistData | null>(null);
 
   const { playSurah, setSurahList, setPlaylist, currentSurah, isPlaying } = usePlayer();
+
+  const { isIOS, isInstallable, canPromptInstall, promptInstall } = useInstallPrompt();
+  const [isInstallSheetOpen, setIsInstallSheetOpen] = useState(false);
+  const isDesktop = useIsDesktop();
+
+  // Offer installing once on phones, a moment after arriving rather than on
+  // top of the first paint. A dismissal holds for two weeks.
+  useEffect(() => {
+    if (!isInstallable || isDesktop) return;
+
+    try {
+      const dismissedAt = Number(localStorage.getItem(INSTALL_DISMISSED_KEY));
+      if (dismissedAt && Date.now() - dismissedAt < INSTALL_SNOOZE) return;
+    } catch {
+      // Storage unavailable: still worth offering
+    }
+
+    const timer = setTimeout(() => setIsInstallSheetOpen(true), 5000);
+    return () => clearTimeout(timer);
+  }, [isInstallable, isDesktop]);
+
+  const closeInstallSheet = () => {
+    setIsInstallSheetOpen(false);
+    try {
+      localStorage.setItem(INSTALL_DISMISSED_KEY, String(Date.now()));
+    } catch {
+      // Worst case it is offered again next visit
+    }
+  };
+
+  const handleInstall = async () => {
+    await promptInstall();
+    setIsInstallSheetOpen(false);
+  };
 
   useEffect(() => {
     const fetchSurahs = async () => {
@@ -141,7 +181,10 @@ const App: React.FC = () => {
       className="min-h-screen flex"
       style={{ backgroundColor: "var(--bg-primary)" }}
     >
-      <SideNavbar onselectMenuItem={handleMenuItemSelect} />
+      <SideNavbar
+        onselectMenuItem={handleMenuItemSelect}
+        onInstallApp={isInstallable ? () => setIsInstallSheetOpen(true) : undefined}
+      />
 
       <TopNavbar />
       <div className="flex-1 flex flex-col overflow-x-hidden md:ml-[260px]">
@@ -328,6 +371,14 @@ const App: React.FC = () => {
 
       {/* Fixed bottom player */}
       <SurahPlayer />
+
+      <InstallAppSheet
+        isOpen={isInstallSheetOpen}
+        onClose={closeInstallSheet}
+        isIOS={isIOS}
+        canPromptInstall={canPromptInstall}
+        onInstall={handleInstall}
+      />
     </div>
   );
 };

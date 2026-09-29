@@ -11,7 +11,7 @@ import {
   ArrowPathRoundedSquareIcon,
 } from "@heroicons/react/24/solid";
 import { usePlayer } from "../context/PlayerContext";
-import { useIsDesktop } from "../hooks/useMediaQuery";
+import { useIsDesktop, useHasTabBar } from "../hooks/useMediaQuery";
 import PlayerProgressBar from "./playerProgressBar";
 import PlayerVolumeSlider from "./playerVolumeSlider";
 import NowPlayingSheet from "./nowPlayingSheet";
@@ -40,6 +40,12 @@ const SurahPlayer: React.FC = () => {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const isDesktop = useIsDesktop();
+  const hasTabBar = useHasTabBar();
+
+  // Floats just above the tab bar (49px) in the installed app
+  const dockClass = hasTabBar
+    ? "fixed bottom-[calc(49px+0.5rem+env(safe-area-inset-bottom))] left-3 right-3 z-50 flex justify-center pointer-events-none"
+    : "fixed bottom-[calc(0.75rem+env(safe-area-inset-bottom))] md:bottom-[calc(1rem+env(safe-area-inset-bottom))] left-3 right-3 md:left-[276px] md:right-4 z-50 flex justify-center pointer-events-none";
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -69,8 +75,11 @@ const SurahPlayer: React.FC = () => {
 
   // Don't render if no surah is selected
   if (!currentSurah) {
+    // As in Apple Music, the installed app shows no mini player until something plays
+    if (hasTabBar) return null;
+
     return (
-      <div className="fixed bottom-[calc(0.75rem+env(safe-area-inset-bottom))] md:bottom-[calc(1rem+env(safe-area-inset-bottom))] left-3 right-3 md:left-[276px] md:right-4 z-50 flex justify-center pointer-events-none">
+      <div className={dockClass}>
         <div
           className="pointer-events-auto w-full max-w-4xl rounded-full backdrop-blur-lg border shadow-lg px-6 py-3 flex items-center justify-center"
           style={{
@@ -88,7 +97,7 @@ const SurahPlayer: React.FC = () => {
 
   return (
     <>
-      <div className="fixed bottom-[calc(0.75rem+env(safe-area-inset-bottom))] md:bottom-[calc(1rem+env(safe-area-inset-bottom))] left-3 right-3 md:left-[276px] md:right-4 z-50 flex justify-center pointer-events-none">
+      <div className={dockClass}>
         <div className="pointer-events-auto w-full max-w-4xl">
           {/* Pill */}
           <div

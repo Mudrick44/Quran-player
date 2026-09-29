@@ -13,6 +13,8 @@ interface SideNavbarProps {
   onselectMenuItem?: (item: string) => void;
   /** Shown as a menu item only when the app can be installed on this device. */
   onInstallApp?: () => void;
+  /** False in the installed app on phones, where the tab bar replaces the menu. */
+  showMobileMenu?: boolean;
 }
 
 interface NavItem {
@@ -23,7 +25,7 @@ interface NavItem {
   onSelect?: () => void;
 }
 
-const SideNavbar = ({ onselectMenuItem, onInstallApp }: SideNavbarProps) => {
+const SideNavbar = ({ onselectMenuItem, onInstallApp, showMobileMenu = true }: SideNavbarProps) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const navItems: NavItem[] = [
@@ -49,27 +51,29 @@ const SideNavbar = ({ onselectMenuItem, onInstallApp }: SideNavbarProps) => {
   return (
     <>
       {/* Mobile Hamburger Button */}
-      <div className="md:hidden fixed top-[calc(1rem+env(safe-area-inset-top))] left-4 z-50">
-        <button onClick={toggleMobileMenu} className="p-2">
-          {isMobileMenuOpen ? (
-            <XMarkIcon
-              className="w-6 h-6"
-              style={{ color: "var(--accent-primary)" }}
-            />
-          ) : (
-            <div className="w-6 h-6 flex flex-col justify-center space-y-1">
-              <div
-                className="w-6 h-0.5"
-                style={{ backgroundColor: "var(--accent-primary)" }}
-              ></div>
-              <div
-                className="w-6 h-0.5"
-                style={{ backgroundColor: "var(--accent-primary)" }}
-              ></div>
-            </div>
-          )}
-        </button>
-      </div>
+      {showMobileMenu && (
+        <div className="md:hidden fixed top-[calc(1rem+env(safe-area-inset-top))] left-4 z-50">
+          <button onClick={toggleMobileMenu} className="p-2">
+            {isMobileMenuOpen ? (
+              <XMarkIcon
+                className="w-6 h-6"
+                style={{ color: "var(--accent-primary)" }}
+              />
+            ) : (
+              <div className="w-6 h-6 flex flex-col justify-center space-y-1">
+                <div
+                  className="w-6 h-0.5"
+                  style={{ backgroundColor: "var(--accent-primary)" }}
+                ></div>
+                <div
+                  className="w-6 h-0.5"
+                  style={{ backgroundColor: "var(--accent-primary)" }}
+                ></div>
+              </div>
+            )}
+          </button>
+        </div>
+      )}
 
       {/* Sidebar - Desktop */}
       <div
@@ -151,101 +155,103 @@ const SideNavbar = ({ onselectMenuItem, onInstallApp }: SideNavbarProps) => {
       </div>
 
       {/* Mobile Menu - Slides from top */}
-      <div
-        className={`md:hidden fixed inset-0 z-[55] pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] transform transition-transform duration-300 ease-in-out ${
-          isMobileMenuOpen ? "translate-y-0" : "-translate-y-full"
-        }`}
-        style={{ backgroundColor: "var(--bg-card)" }}
-      >
-        {/* Mobile Header */}
+      {showMobileMenu && (
         <div
-          className="flex items-center justify-between ps-[30px] pe-[30px] pt-[17px] pb-[17px] min-h-[50px]"
-          style={{ borderBottom: "1px solid var(--border-secondary)" }}
+          className={`md:hidden fixed inset-0 z-[55] pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] transform transition-transform duration-300 ease-in-out ${
+            isMobileMenuOpen ? "translate-y-0" : "-translate-y-full"
+          }`}
+          style={{ backgroundColor: "var(--bg-card)" }}
         >
-          <h1
-            className="text-xl font-semibold"
-            style={{ color: "var(--text-primary)" }}
+          {/* Mobile Header */}
+          <div
+            className="flex items-center justify-between ps-[30px] pe-[30px] pt-[17px] pb-[17px] min-h-[50px]"
+            style={{ borderBottom: "1px solid var(--border-secondary)" }}
           >
-            Quran Player
-          </h1>
-          <button
-            onClick={toggleMobileMenu}
-            className="p-2 rounded-lg transition-colors duration-200"
-            style={
-              { "--hover-bg": "var(--sidebar-selected)" } as React.CSSProperties
-            }
-            onMouseEnter={(e) =>
-              (e.currentTarget.style.backgroundColor =
-                "var(--sidebar-selected)")
-            }
-            onMouseLeave={(e) =>
-              (e.currentTarget.style.backgroundColor = "transparent")
-            }
-          >
-            <XMarkIcon
-              className="w-6 h-6"
-              style={{ color: "var(--accent-primary)" }}
-            />
-          </button>
-        </div>
-
-        {/* Mobile Navigation Items */}
-        <nav className="py-4">
-          {navItems.map((item) => {
-            return (
-              <div
-                key={item.id}
-                className="flex items-center ps-[30px] pe-[30px] py-4 cursor-pointer transition-colors duration-200 group"
-                style={
-                  {
-                    "--hover-bg": "var(--sidebar-selected)",
-                  } as React.CSSProperties
-                }
-                onMouseEnter={(e) =>
-                  (e.currentTarget.style.backgroundColor =
-                    "var(--sidebar-selected)")
-                }
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.backgroundColor = "transparent")
-                }
-                onClick={() => {
-                  selectItem(item);
-                  toggleMobileMenu();
-                }}
-              >
-                <item.icon
-                  className="w-6 h-6 mr-4 group-hover:scale-110 transition-all duration-200"
-                  style={{ color: "var(--accent-primary)" }}
-                />
-                <span
-                  className="font-medium text-lg"
-                  style={{ color: "var(--text-primary)" }}
-                >
-                  {item.label}
-                </span>
-              </div>
-            );
-          })}
-        </nav>
-
-        {/* Mobile Footer */}
-        <div style={{ borderTop: "1px solid var(--border-secondary)" }}>
-          <div className="ps-[30px] pe-[30px] py-4">
-            <p
-              className="text-sm flex items-center justify-center gap-1.5"
-              style={{ color: "var(--text-secondary)" }}
+            <h1
+              className="text-xl font-semibold"
+              style={{ color: "var(--text-primary)" }}
             >
-              Made with
-              <HeartIcon
-                className="w-4 h-4"
+              Quran Player
+            </h1>
+            <button
+              onClick={toggleMobileMenu}
+              className="p-2 rounded-lg transition-colors duration-200"
+              style={
+                { "--hover-bg": "var(--sidebar-selected)" } as React.CSSProperties
+              }
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.backgroundColor =
+                  "var(--sidebar-selected)")
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.backgroundColor = "transparent")
+              }
+            >
+              <XMarkIcon
+                className="w-6 h-6"
                 style={{ color: "var(--accent-primary)" }}
-                aria-label="love"
               />
-              by Mudrick
-            </p>
+            </button>
+          </div>
+
+          {/* Mobile Navigation Items */}
+          <nav className="py-4">
+            {navItems.map((item) => {
+              return (
+                <div
+                  key={item.id}
+                  className="flex items-center ps-[30px] pe-[30px] py-4 cursor-pointer transition-colors duration-200 group"
+                  style={
+                    {
+                      "--hover-bg": "var(--sidebar-selected)",
+                    } as React.CSSProperties
+                  }
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.backgroundColor =
+                      "var(--sidebar-selected)")
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.backgroundColor = "transparent")
+                  }
+                  onClick={() => {
+                    selectItem(item);
+                    toggleMobileMenu();
+                  }}
+                >
+                  <item.icon
+                    className="w-6 h-6 mr-4 group-hover:scale-110 transition-all duration-200"
+                    style={{ color: "var(--accent-primary)" }}
+                  />
+                  <span
+                    className="font-medium text-lg"
+                    style={{ color: "var(--text-primary)" }}
+                  >
+                    {item.label}
+                  </span>
+                </div>
+              );
+            })}
+          </nav>
+
+          {/* Mobile Footer */}
+          <div style={{ borderTop: "1px solid var(--border-secondary)" }}>
+            <div className="ps-[30px] pe-[30px] py-4">
+              <p
+                className="text-sm flex items-center justify-center gap-1.5"
+                style={{ color: "var(--text-secondary)" }}
+              >
+                Made with
+                <HeartIcon
+                  className="w-4 h-4"
+                  style={{ color: "var(--accent-primary)" }}
+                  aria-label="love"
+                />
+                by Mudrick
+              </p>
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </>
   );
 };

@@ -23,3 +23,20 @@ export const useMediaQuery = (query: string) => {
 
 /** Matches Tailwind's `md` breakpoint, the same one the layout uses. */
 export const useIsDesktop = () => useMediaQuery("(min-width: 768px)");
+
+/** Launched from the home screen rather than opened in a browser tab. */
+export const useIsStandalone = () => {
+  const matches = useMediaQuery("(display-mode: standalone)");
+  // iOS Safari's older, non-standard flag
+  return matches || (navigator as Navigator & { standalone?: boolean }).standalone === true;
+};
+
+/**
+ * The installed app on a phone swaps the hamburger menu for a bottom tab bar,
+ * as native apps do. The website and desktop keep the sidebar layout.
+ */
+export const useHasTabBar = () => {
+  const isStandalone = useIsStandalone();
+  const isDesktop = useIsDesktop();
+  return isStandalone && !isDesktop;
+};

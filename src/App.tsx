@@ -10,7 +10,9 @@ import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
 import SurahPlayer from "./components/surahPlayer";
 import InstallAppSheet from "./components/installAppSheet";
 import { useInstallPrompt } from "./hooks/useInstallPrompt";
-import { useIsDesktop } from "./hooks/useMediaQuery";
+import { useIsDesktop, useHasTabBar } from "./hooks/useMediaQuery";
+import TabBar from "./components/tabBar";
+import UpdateBanner from "./components/updateBanner";
 import { PlayerProvider, usePlayer } from "./context/PlayerContext";
 import { PlaylistsProvider } from "./context/PlaylistsContext";
 
@@ -55,6 +57,7 @@ const App: React.FC = () => {
   const { isIOS, isInstallable, canPromptInstall, promptInstall } = useInstallPrompt();
   const [isInstallSheetOpen, setIsInstallSheetOpen] = useState(false);
   const isDesktop = useIsDesktop();
+  const hasTabBar = useHasTabBar();
 
   // Offer installing once on phones, a moment after arriving rather than on
   // top of the first paint. A dismissal holds for two weeks.
@@ -128,6 +131,17 @@ const App: React.FC = () => {
     setCurrentPageMain(item);
   };
 
+  // "Home" is the initial page and the same screen as Listen Now
+  const activeTab = currentPagemain === "Home" ? "Listen Now" : currentPagemain;
+
+  // As on iOS: tapping the current tab returns to its top, switching tabs
+  // starts the new one at the top
+  const handleTabSelect = (tab: string) => {
+    const isReselect = tab === activeTab;
+    handleMenuItemSelect(tab);
+    window.scrollTo({ top: 0, behavior: isReselect ? "smooth" : "instant" });
+  };
+
   const playlists: PlaylistData[] = [
     {
       id: 1,
@@ -184,11 +198,19 @@ const App: React.FC = () => {
       <SideNavbar
         onselectMenuItem={handleMenuItemSelect}
         onInstallApp={isInstallable ? () => setIsInstallSheetOpen(true) : undefined}
+        showMobileMenu={!hasTabBar}
       />
 
-      <TopNavbar />
+      <TopNavbar title={hasTabBar ? activeTab : undefined} />
       <div className="flex-1 flex flex-col overflow-x-hidden md:ml-[260px]">
-        <main className="flex-1 px-8 py-6 pt-[calc(5rem+env(safe-area-inset-top))] pb-[calc(7rem+env(safe-area-inset-bottom))] overflow-y-auto">
+        <main
+          className={`flex-1 px-8 py-6 pt-[calc(5rem+env(safe-area-inset-top))] overflow-y-auto ${
+            // Room for the mini player, plus the tab bar when there is one
+            hasTabBar
+              ? "pb-[calc(49px+6rem+env(safe-area-inset-bottom))]"
+              : "pb-[calc(7rem+env(safe-area-inset-bottom))]"
+          }`}
+        >
 
           <div className="max-w-7xl">
             {/* ---------------------- */}
@@ -371,6 +393,10 @@ const App: React.FC = () => {
 
       {/* Fixed bottom player */}
       <SurahPlayer />
+
+      {hasTabBar && <TabBar activeTab={activeTab} onSelect={handleTabSelect} />}
+
+      <UpdateBanner />
 
       <InstallAppSheet
         isOpen={isInstallSheetOpen}

@@ -15,19 +15,19 @@ import { usePlayer } from "../context/PlayerContext";
 import { useBodyScrollLock } from "../hooks/useBodyScrollLock";
 import { usePresence } from "../hooks/usePresence";
 import { useDragToDismiss } from "../hooks/useDragToDismiss";
-import { useSurahArtwork } from "../hooks/useSurahArtwork";
 import { EASE_OUT, OVERLAY_DURATION } from "../utils/motion";
 import PlayerProgressBar from "./playerProgressBar";
 import PlayerVolumeSlider from "./playerVolumeSlider";
 import NowPlayingQueue from "./nowPlayingQueue";
 import BottomDrawer from "./bottomDrawer";
 import ReciterList from "./reciterList";
+import AyahTranslation from "./ayahTranslation";
 
 /** The swappable middle region. Add a panel here to extend the sheet. */
-type Panel = "artwork" | "queue";
+type Panel = "translation" | "queue";
 
 const PANEL_LABELS: Record<Panel, string> = {
-  artwork: "Now Playing",
+  translation: "Now Playing",
   queue: "Up Next",
 };
 
@@ -57,23 +57,22 @@ const NowPlayingSheet: React.FC<NowPlayingSheetProps> = ({ isOpen, onClose }) =>
     currentPlaylist,
   } = usePlayer();
 
-  const [panel, setPanel] = useState<Panel>("artwork");
+  const [panel, setPanel] = useState<Panel>("translation");
   const [isReciterDrawerOpen, setIsReciterDrawerOpen] = useState(false);
 
-  const artwork = useSurahArtwork(currentSurah?.number ?? 1);
   const { isMounted, isVisible } = usePresence(isOpen, OVERLAY_DURATION);
   const { offset, isDragging, handlers, reset } = useDragToDismiss(onClose, 110);
 
   useBodyScrollLock(isMounted);
 
-  // Reopen on the artwork rather than wherever the user left off, and clear a
+  // Reopen on the translation rather than wherever the user left off, and clear a
   // left-over drag if it reopens mid exit transition
   useEffect(() => {
     if (isOpen) {
       reset();
       return;
     }
-    setPanel("artwork");
+    setPanel("translation");
     setIsReciterDrawerOpen(false);
   }, [isOpen, reset]);
 
@@ -143,46 +142,11 @@ const NowPlayingSheet: React.FC<NowPlayingSheetProps> = ({ isOpen, onClose }) =>
 
       {/* ---------- Swappable panel (keyed so switching cross-fades) ---------- */}
       <div className="flex-1 min-h-0 overflow-y-auto px-5 pt-3 scrollbar-hide">
-        <div key={panel} className="animate-panel-in min-h-full">
-          {panel === "artwork" ? (
-            /* min-h-full + my-auto centres the art without clipping it in
-               landscape, where the square can be taller than the panel */
-            <div className="min-h-full flex justify-center py-2">
-              <div className="relative my-auto w-full max-w-[380px] aspect-square rounded-2xl overflow-hidden shadow-2xl">
-                <img
-                  src={artwork.src}
-                  alt=""
-                  className="w-full h-full object-cover transition-opacity duration-500"
-                />
-                <div
-                  className="absolute inset-x-0 top-0 px-4 py-3 text-center"
-                  style={{
-                    background: "linear-gradient(to bottom, rgba(0,0,0,.6), transparent)",
-                  }}
-                >
-                  <span className="text-[11px] uppercase tracking-[0.35em] text-white/90">
-                    {currentSurah.name}
-                  </span>
-                </div>
-                <div
-                  className="absolute inset-x-0 bottom-0 px-4 py-4 text-center"
-                  style={{
-                    background: "linear-gradient(to top, rgba(0,0,0,.65), transparent)",
-                  }}
-                >
-                  <span className="text-2xl font-arabic text-white block">
-                    {currentSurah.nameArabic}
-                  </span>
-                  {artwork.credit && (
-                    <span className="block mt-1 text-[10px] text-white/60 truncate">
-                      {artwork.credit} · The Met
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
+        <div key={panel} className="animate-panel-in min-h-full flex flex-col">
+          {panel === "translation" ? (
+            <AyahTranslation />
           ) : (
-            <NowPlayingQueue onSelect={() => setPanel("artwork")} />
+            <NowPlayingQueue onSelect={() => setPanel("translation")} />
           )}
         </div>
       </div>
@@ -292,7 +256,7 @@ const NowPlayingSheet: React.FC<NowPlayingSheetProps> = ({ isOpen, onClose }) =>
         <div className="flex justify-center mt-6">
           <button
             onClick={() =>
-              setPanel((current) => (current === "queue" ? "artwork" : "queue"))
+              setPanel((current) => (current === "queue" ? "translation" : "queue"))
             }
             className={`p-2 rounded-lg ${pressable}`}
             style={{

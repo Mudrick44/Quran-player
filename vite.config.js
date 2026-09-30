@@ -57,6 +57,35 @@ export default defineConfig({
             },
           },
           {
+            // Ayah timings for the translation view. Fixed per recording.
+            urlPattern: ({ url }) =>
+              url.hostname === "www.mp3quran.net" && url.pathname.startsWith("/api/v3/ayat_timing"),
+            handler: "CacheFirst",
+            options: {
+              cacheName: "ayah-timings",
+              expiration: { maxEntries: 200, maxAgeSeconds: 90 * DAY },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+          {
+            // Translation font: the stylesheet can change, the font files can't
+            urlPattern: ({ url }) => url.hostname === "fonts.googleapis.com",
+            handler: "StaleWhileRevalidate",
+            options: {
+              cacheName: "google-fonts-css",
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+          {
+            urlPattern: ({ url }) => url.hostname === "fonts.gstatic.com",
+            handler: "CacheFirst",
+            options: {
+              cacheName: "google-fonts",
+              expiration: { maxEntries: 10, maxAgeSeconds: 365 * DAY },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+          {
             // Museum cover art never changes for a given URL
             urlPattern: ({ url }) => url.hostname === "images.metmuseum.org",
             handler: "CacheFirst",

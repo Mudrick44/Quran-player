@@ -1,4 +1,5 @@
 import NowPlayingIndicator from "./nowPlayingIndicator";
+import DownloadButton from "./downloadButton";
 
 interface SurahData {
   surahName: string;
@@ -96,6 +97,17 @@ const Surah = ({
           {data.totalAyah} verses • {data.revelationPlace === 'Mecca' ? 'Meccan' : 'Medinan'}
         </p>
       </div>
+
+      <DownloadButton
+        surah={{
+          number,
+          name: data.surahName,
+          nameArabic: data.surahNameArabic,
+          totalAyah: data.totalAyah,
+        }}
+        size={20}
+        className="ml-1"
+      />
     </div>
   );
 };

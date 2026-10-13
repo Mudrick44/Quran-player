@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { getText, saveText } from "./downloadStore";
 
 /**
  * Per-ayah English translation, synced to the full-surah recitation.
@@ -80,8 +81,15 @@ const cached = <K, V>(cache: Map<K, Promise<V>>, key: K, load: () => Promise<V>)
   return promise;
 };
 
+// Keys in the downloads store, where a downloaded surah keeps its own copy
+const translationTextKey = (surahNumber: number) => `translation-${surahNumber}`;
+const timingTextKey = (surahNumber: number, readId: number) => `timing-${readId}-${surahNumber}`;
+
 const fetchTranslations = (surahNumber: number) =>
   cached(translationCache, surahNumber, async () => {
+    const saved = await getText<string[]>(translationTextKey(surahNumber));
+    if (saved) return saved;
+
     const data = (await fetchJson(`https://quranapi.pages.dev/api/${surahNumber}.json`)) as {
       english?: unknown;
     };
@@ -91,6 +99,9 @@ const fetchTranslations = (surahNumber: number) =>
 
 const fetchTimings = (surahNumber: number, readId: number) =>
   cached(timingCache, `${readId}-${surahNumber}`, async () => {
+    const saved = await getText<AyahTiming[]>(timingTextKey(surahNumber, readId));
+    if (saved) return saved;
+
     const data = await fetchJson(
       `https://www.mp3quran.net/api/v3/ayat_timing?surah=${surahNumber}&read=${readId}`
     );
@@ -101,6 +112,22 @@ const fetchTimings = (surahNumber: number, readId: number) =>
       end: t.end_time / 1000,
     }));
   });
+
+/**
+ * Keeps a copy of a surah's translation and timings alongside its downloaded
+ * audio, so the synced translation works offline too. The service worker's
+ * caches are capped and can evict these; the downloads store isn't.
+ */
+export const saveTranslationsForOffline = async (surahNumber: number, reciterId: number) => {
+  const readId = MP3QURAN_READ_IDS[reciterId];
+  const [english, ayahTimings] = await Promise.all([
+    fetchTranslations(surahNumber),
+    readId ? fetchTimings(surahNumber, readId) : Promise.resolve(null),
+  ]);
+
+  await saveText(translationTextKey(surahNumber), english);
+  if (readId && ayahTimings) await saveText(timingTextKey(surahNumber, readId), ayahTimings);
+};
 
 export function useAyahTranslations(surahNumber: number, reciterId: number) {
   const [translations, setTranslations] = useState<string[]>([]);

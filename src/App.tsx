@@ -13,8 +13,12 @@ import { useInstallPrompt } from "./hooks/useInstallPrompt";
 import { useIsDesktop, useHasTabBar } from "./hooks/useMediaQuery";
 import TabBar from "./components/tabBar";
 import UpdateBanner from "./components/updateBanner";
+import DownloadsPage from "./components/downloadsPage";
 import { PlayerProvider, usePlayer } from "./context/PlayerContext";
 import { PlaylistsProvider } from "./context/PlaylistsContext";
+import { DownloadsProvider } from "./context/DownloadsContext";
+import { ToastProvider } from "./context/ToastContext";
+import { useOnlineStatus } from "./hooks/useOnlineStatus";
 
 // Import images so Vite can bundle them
 import quran3Image from "./assets/quran3.webp";
@@ -46,6 +50,9 @@ const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [surahs, setSurahs] = useState<SurahData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [loadAttempt, setLoadAttempt] = useState(0);
+  const isOnline = useOnlineStatus();
   const surahsPerPage = 16;
   const totalPages = Math.ceil(114 / surahsPerPage);
 
@@ -93,9 +100,11 @@ const App: React.FC = () => {
     const fetchSurahs = async () => {
       try {
         setLoading(true);
+        setLoadFailed(false);
         const response = await fetch(
           "https://quranapi.pages.dev/api/surah.json",
         );
+        if (!response.ok) throw new Error(`Request failed: ${response.status}`);
         const data: SurahData[] = await response.json();
         setSurahs(data);
 
@@ -109,6 +118,7 @@ const App: React.FC = () => {
         setSurahList(surahInfoList);
       } catch (error) {
         console.error("Error fetching surahs:", error);
+        setLoadFailed(true);
       } finally {
         setLoading(false);
       }
@@ -116,7 +126,15 @@ const App: React.FC = () => {
 
     fetchSurahs();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [loadAttempt]);
+
+  // Coming back online fixes a failed load, so retry it without being asked
+  useEffect(() => {
+    if (!loadFailed) return;
+    const retry = () => setLoadAttempt((n) => n + 1);
+    window.addEventListener("online", retry);
+    return () => window.removeEventListener("online", retry);
+  }, [loadFailed]);
 
   const getCurrentPageSurahs = () => {
     const startIndex = (currentPage - 1) * surahsPerPage;
@@ -222,6 +240,17 @@ const App: React.FC = () => {
             {/* SHOW MY PLAYLISTS PAGE */}
             {/* ---------------------- */}
             {currentPagemain === "My Playlists" && <MyPlaylistsPage />}
+
+            {/* ---------------------- */}
+            {/* SHOW DOWNLOADS PAGE    */}
+            {/* ---------------------- */}
+            {currentPagemain === "Downloads" && (
+              <DownloadsPage
+                isIOS={isIOS}
+                onInstallApp={isInstallable ? () => setIsInstallSheetOpen(true) : undefined}
+                onBrowse={() => handleTabSelect("Browse")}
+              />
+            )}
 
             {/* ---------------------- */}
             {/* SHOW PLAYLIST DETAIL   */}
@@ -346,6 +375,39 @@ const App: React.FC = () => {
                   </div>
                 </div>
 
+                {loadFailed && !loading ? (
+                  <div
+                    className="flex flex-col items-center justify-center text-center py-12 rounded-xl"
+                    style={{ backgroundColor: "var(--sidebar-selected)" }}
+                  >
+                    <p className="font-medium mb-1" style={{ color: "var(--text-primary)" }}>
+                      {isOnline ? "Couldn't load the surahs" : "You're offline"}
+                    </p>
+                    <p className="text-sm mb-4 max-w-sm px-4" style={{ color: "var(--text-secondary)" }}>
+                      {isOnline
+                        ? "Check your connection and try again."
+                        : "The surah list will load when you reconnect. Your downloads are still available."}
+                    </p>
+                    <div className="flex items-center gap-2">
+                      {isOnline && (
+                        <button
+                          onClick={() => setLoadAttempt((n) => n + 1)}
+                          className="px-5 py-2 rounded-full font-semibold transition-all hover:scale-105"
+                          style={{ backgroundColor: "var(--accent-primary)", color: "white" }}
+                        >
+                          Try Again
+                        </button>
+                      )}
+                      <button
+                        onClick={() => handleTabSelect("Downloads")}
+                        className="px-5 py-2 rounded-full font-semibold transition-all hover:scale-105"
+                        style={{ backgroundColor: "var(--bg-card)", color: "var(--text-primary)" }}
+                      >
+                        Go to Downloads
+                      </button>
+                    </div>
+                  </div>
+                ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-x-6 gap-y-1">
                   {loading
                     ? Array.from({ length: 16 }).map((_, index) => (
@@ -385,6 +447,7 @@ const App: React.FC = () => {
                         );
                       })}
                 </div>
+                )}
               </div>
             )}
           </div>
@@ -409,14 +472,19 @@ const App: React.FC = () => {
   );
 };
 
-// Wrap App with PlayerProvider
+// Toasts are outermost so every provider can report to the user, and
+// downloads sit above the player, which plays the downloaded copies
 const AppWithProvider: React.FC = () => {
   return (
-    <PlayerProvider>
-      <PlaylistsProvider>
-        <App />
-      </PlaylistsProvider>
-    </PlayerProvider>
+    <ToastProvider>
+      <DownloadsProvider>
+        <PlayerProvider>
+          <PlaylistsProvider>
+            <App />
+          </PlaylistsProvider>
+        </PlayerProvider>
+      </DownloadsProvider>
+    </ToastProvider>
   );
 };
 

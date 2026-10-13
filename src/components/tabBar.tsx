@@ -4,12 +4,14 @@ import {
   BookOpenIcon,
   MicrophoneIcon,
   QueueListIcon,
+  ArrowDownCircleIcon,
 } from "@heroicons/react/24/outline";
 import {
   HomeIcon as HomeIconSolid,
   BookOpenIcon as BookOpenIconSolid,
   MicrophoneIcon as MicrophoneIconSolid,
   QueueListIcon as QueueListIconSolid,
+  ArrowDownCircleIcon as ArrowDownCircleIconSolid,
 } from "@heroicons/react/24/solid";
 
 type Icon = ComponentType<SVGProps<SVGSVGElement>>;
@@ -27,6 +29,7 @@ const TABS: Tab[] = [
   { id: "Browse", label: "Browse", icon: BookOpenIcon, activeIcon: BookOpenIconSolid },
   { id: "Reciters", label: "Reciters", icon: MicrophoneIcon, activeIcon: MicrophoneIconSolid },
   { id: "My Playlists", label: "Playlists", icon: QueueListIcon, activeIcon: QueueListIconSolid },
+  { id: "Downloads", label: "Downloads", icon: ArrowDownCircleIcon, activeIcon: ArrowDownCircleIconSolid },
 ];
 
 interface TabBarProps {
@@ -48,7 +51,7 @@ const TabBar: React.FC<TabBarProps> = ({ activeTab, onSelect }) => (
     }}
     aria-label="Main"
   >
-    <div className="grid grid-cols-4 h-[49px]">
+    <div className="grid grid-cols-5 h-[49px]">
       {TABS.map((tab) => {
         const isActive = tab.id === activeTab;
         const TabIcon = isActive ? tab.activeIcon : tab.icon;

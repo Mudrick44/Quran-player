@@ -22,6 +22,7 @@ import NowPlayingQueue from "./nowPlayingQueue";
 import BottomDrawer from "./bottomDrawer";
 import ReciterList from "./reciterList";
 import AyahTranslation from "./ayahTranslation";
+import DownloadButton from "./downloadButton";
 
 /** The swappable middle region. Add a panel here to extend the sheet. */
 type Panel = "translation" | "queue";
@@ -168,21 +169,25 @@ const NowPlayingSheet: React.FC<NowPlayingSheetProps> = ({ isOpen, onClose }) =>
             </p>
           </div>
 
-          <button
-            onClick={() => setIsReciterDrawerOpen(true)}
-            className={`p-2.5 rounded-full flex-shrink-0 ${pressable}`}
-            style={{
-              color: isReciterDrawerOpen
-                ? "var(--accent-primary)"
-                : "var(--text-secondary)",
-              backgroundColor: "var(--sidebar-selected)",
-            }}
-            aria-label="Change reciter"
-            aria-haspopup="dialog"
-            aria-expanded={isReciterDrawerOpen}
-          >
-            <MicrophoneIcon className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <DownloadButton surah={currentSurah} size={22} />
+
+            <button
+              onClick={() => setIsReciterDrawerOpen(true)}
+              className={`p-2.5 rounded-full flex-shrink-0 ${pressable}`}
+              style={{
+                color: isReciterDrawerOpen
+                  ? "var(--accent-primary)"
+                  : "var(--text-secondary)",
+                backgroundColor: "var(--sidebar-selected)",
+              }}
+              aria-label="Change reciter"
+              aria-haspopup="dialog"
+              aria-expanded={isReciterDrawerOpen}
+            >
+              <MicrophoneIcon className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         <PlayerProgressBar variant="detailed" />

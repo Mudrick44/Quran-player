@@ -5,7 +5,8 @@ import {
   MicrophoneIcon,
   QueueListIcon,
   XMarkIcon,
-  ArrowDownTrayIcon,
+  ArrowDownCircleIcon,
+  DevicePhoneMobileIcon,
 } from "@heroicons/react/24/outline";
 import { HeartIcon } from "@heroicons/react/24/solid";
 import quranIcon from "../assets/quran-rehal-svgrepo-com.svg";
@@ -33,10 +34,11 @@ const SideNavbar = ({ onselectMenuItem, onInstallApp, showMobileMenu = true }: S
     { id: 2, label: "Browse", icon: BookOpenIcon },
     { id: 3, label: "Reciters", icon: MicrophoneIcon },
     { id: 4, label: "My Playlists", icon: QueueListIcon },
+    { id: 5, label: "Downloads", icon: ArrowDownCircleIcon },
   ];
 
   if (onInstallApp) {
-    navItems.push({ id: 5, label: "Install App", icon: ArrowDownTrayIcon, onSelect: onInstallApp });
+    navItems.push({ id: 6, label: "Install App", icon: DevicePhoneMobileIcon, onSelect: onInstallApp });
   }
 
   const selectItem = (item: NavItem) => {

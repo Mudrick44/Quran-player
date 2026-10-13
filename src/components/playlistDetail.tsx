@@ -1,6 +1,7 @@
 import { PlayIcon, ArrowLeftIcon } from "@heroicons/react/24/solid";
 import { usePlayer } from "../context/PlayerContext";
 import SurahListRow from "./surahListRow";
+import PlaylistDownloadButton from "./playlistDownloadButton";
 
 interface PlaylistSurah {
   number: number;
@@ -96,18 +97,22 @@ const PlaylistDetail: React.FC<PlaylistDetailProps> = ({
             {description}
           </p>
 
-          {/* Play Button */}
-          <button
-            onClick={handlePlayAll}
-            className="mt-4 flex items-center gap-2 px-6 py-3 rounded-full font-semibold transition-all hover:scale-105"
-            style={{
-              backgroundColor: "var(--accent-primary)",
-              color: "white",
-            }}
-          >
-            <PlayIcon className="w-5 h-5" />
-            Play All
-          </button>
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            {/* Play Button */}
+            <button
+              onClick={handlePlayAll}
+              className="flex items-center gap-2 px-6 py-3 rounded-full font-semibold transition-all hover:scale-105"
+              style={{
+                backgroundColor: "var(--accent-primary)",
+                color: "white",
+              }}
+            >
+              <PlayIcon className="w-5 h-5" />
+              Play All
+            </button>
+
+            <PlaylistDownloadButton surahs={surahs} />
+          </div>
         </div>
       </div>
 

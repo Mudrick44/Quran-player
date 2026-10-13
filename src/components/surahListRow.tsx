@@ -3,6 +3,7 @@ import { usePlayer } from "../context/PlayerContext";
 import { useSurahDuration } from "../api/fetchSurahDuration";
 import { formatDuration } from "../utils/formatTime";
 import NowPlayingIndicator from "./nowPlayingIndicator";
+import DownloadButton from "./downloadButton";
 
 interface SurahListRowSurah {
   number: number;
@@ -116,6 +117,8 @@ const SurahListRow: React.FC<SurahListRowProps> = ({
         >
           <PlayIcon className="w-4 h-4" />
         </button>
+
+        <DownloadButton surah={surah} size={20} />
 
         {/* Always visible on touch, where there is no hover to reveal it */}
         {onRemove && (

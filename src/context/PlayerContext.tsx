@@ -1,5 +1,16 @@
 import { createContext, useContext, useState, useRef, useEffect, ReactNode } from "react";
 import { useMediaSession } from "../hooks/useMediaSession";
+import { useDownloads } from "./DownloadsContext";
+import { useToast } from "./ToastContext";
+import { downloadKey, getDownloadedAudio } from "../api/downloadStore";
+
+/** A playback failure whose message is fit to show the user. */
+class PlaybackError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "PlaybackError";
+  }
+}
 
 export interface SurahInfo {
   number: number;
@@ -8,7 +19,7 @@ export interface SurahInfo {
   totalAyah: number;
 }
 
-interface ReciterInfo {
+export interface ReciterInfo {
   id: number;
   name: string;
 }
@@ -36,8 +47,9 @@ interface PlayerContextType {
   autoPlay: boolean;
   currentPlaylist: SurahInfo[] | null;
   surahList: SurahInfo[];
-  playSurah: (surah: SurahInfo) => void;
-  playSurahFromPlaylist: (surah: SurahInfo, playlist: SurahInfo[]) => void;
+  /** Plays with the current reciter unless another is given. */
+  playSurah: (surah: SurahInfo, reciter?: ReciterInfo) => void;
+  playSurahFromPlaylist: (surah: SurahInfo, playlist: SurahInfo[], reciter?: ReciterInfo) => void;
   setPlaylist: (playlist: SurahInfo[] | null) => void;
   setSurahList: (surahs: SurahInfo[]) => void;
   changeReciter: (reciter: ReciterInfo) => void;
@@ -75,9 +87,15 @@ export const PlayerProvider = ({ children }: PlayerProviderProps) => {
   const [currentPlaylist, setCurrentPlaylist] = useState<SurahInfo[] | null>(null);
   const [allSurahs, setAllSurahs] = useState<SurahInfo[]>([]);
 
+  const { isDownloaded } = useDownloads();
+  const { showToast } = useToast();
+
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const autoPlayRef = useRef(autoPlay);
   const playNextRef = useRef<() => void>(() => {});
+  const reportAudioErrorRef = useRef<() => void>(() => {});
+  /** Bumped on every load, so a slow load can't overwrite a newer one. */
+  const loadRequestRef = useRef(0);
 
   // Keep refs in sync with state
   useEffect(() => {
@@ -116,9 +134,19 @@ export const PlayerProvider = ({ children }: PlayerProviderProps) => {
       setIsLoading(true);
     });
 
+    // The stream dropped or the file couldn't be decoded
+    audio.addEventListener("error", () => {
+      // Clearing the source on unmount also fires this; that's not a failure
+      if (!audio.getAttribute("src")) return;
+      setIsPlaying(false);
+      setIsLoading(false);
+      reportAudioErrorRef.current();
+    });
+
     return () => {
       audio.pause();
-      audio.src = "";
+      audio.removeAttribute("src");
+      audio.load();
     };
   }, []);
 
@@ -129,40 +157,101 @@ export const PlayerProvider = ({ children }: PlayerProviderProps) => {
     }
   }, [volume, isMuted]);
 
-  const fetchAudioUrl = async (surahNumber: number): Promise<string> => {
+  /**
+   * Where to play a surah from: the downloaded copy if there is one, otherwise
+   * the stream. Throws a `PlaybackError` with a message for the user.
+   */
+  const resolveAudioSrc = async (surah: SurahInfo, reciterId: number): Promise<string> => {
+    if (isDownloaded(reciterId, surah.number)) {
+      try {
+        const blob = await getDownloadedAudio(downloadKey(reciterId, surah.number));
+        if (blob) return URL.createObjectURL(blob);
+      } catch (error) {
+        // Fall through to streaming if we can
+        console.error("Error reading downloaded audio:", error);
+      }
+    }
+
+    if (!navigator.onLine) {
+      throw new PlaybackError(
+        `You're offline. Download ${surah.name} to listen without internet.`
+      );
+    }
+
     try {
       const response = await fetch(
-        `https://quranapi.pages.dev/api/audio/${surahNumber}.json`
+        `https://quranapi.pages.dev/api/audio/${surah.number}.json`
       );
+      if (!response.ok) throw new Error(`Request failed: ${response.status}`);
       const data = await response.json();
 
-      // Get audio for the current reciter (default to reciter 1 - Mishary)
-      const reciterData = data[currentReciter.id];
-      if (reciterData && reciterData.url) {
-        return reciterData.url;
-      }
-
-      // Fallback to first available reciter
-      const firstReciter = Object.values(data)[0] as { url: string };
-      return firstReciter?.url || "";
+      const url =
+        data[reciterId]?.url ?? (Object.values(data)[0] as { url?: string } | undefined)?.url;
+      if (url) return url;
     } catch (error) {
       console.error("Error fetching audio:", error);
-      return "";
     }
+
+    throw new PlaybackError(`Couldn't load ${surah.name}. Check your connection and try again.`);
   };
 
-  const playSurah = async (surah: SurahInfo) => {
+  /** Swaps the audio element's source, releasing the previous downloaded file. */
+  const setAudioElementSrc = (src: string) => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (audio.src.startsWith("blob:")) URL.revokeObjectURL(audio.src);
+    audio.src = src;
+    setAudioSrc(src);
+  };
+
+  /** play() rejects if the source fails or the browser blocks autoplay. */
+  const startPlayback = () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    setIsPlaying(true);
+    audio.play().catch((error: unknown) => {
+      // A newer load interrupted this one; that load reports for itself
+      if (error instanceof DOMException && error.name === "AbortError") return;
+      setIsPlaying(false);
+      setIsLoading(false);
+    });
+  };
+
+  const reportPlaybackError = (error: unknown, retry: () => void) => {
+    const message =
+      error instanceof PlaybackError ? error.message : "Something went wrong. Please try again.";
+    showToast(message, {
+      tone: "error",
+      // Retrying won't help offline; the message already says what will
+      action: navigator.onLine ? { label: "Retry", onClick: retry } : undefined,
+    });
+  };
+
+  const playSurah = async (surah: SurahInfo, reciter: ReciterInfo = currentReciter) => {
+    const request = ++loadRequestRef.current;
+
     setIsLoading(true);
     setCurrentSurah(surah);
+    // Don't show the previous track's position against this one
+    setCurrentTime(0);
+    setDuration(0);
+    if (reciter.id !== currentReciter.id) setCurrentReciter(reciter);
 
-    const url = await fetchAudioUrl(surah.number);
-    if (url && audioRef.current) {
-      setAudioSrc(url);
-      audioRef.current.src = url;
-      audioRef.current.play();
-      setIsPlaying(true);
-    } else {
+    try {
+      const src = await resolveAudioSrc(surah, reciter.id);
+      // The user picked something else while this was loading
+      if (request !== loadRequestRef.current) {
+        if (src.startsWith("blob:")) URL.revokeObjectURL(src);
+        return;
+      }
+      setAudioElementSrc(src);
+      startPlayback();
+    } catch (error) {
+      if (request !== loadRequestRef.current) return;
+      audioRef.current?.pause();
+      setIsPlaying(false);
       setIsLoading(false);
+      reportPlaybackError(error, () => playSurah(surah, reciter));
     }
   };
 
@@ -172,9 +261,11 @@ export const PlayerProvider = ({ children }: PlayerProviderProps) => {
     if (isPlaying) {
       audioRef.current.pause();
       setIsPlaying(false);
+    } else if (!audioRef.current.src || audioRef.current.error) {
+      // Nothing loaded, or the last load failed: load it again
+      playSurah(currentSurah);
     } else {
-      audioRef.current.play();
-      setIsPlaying(true);
+      startPlayback();
     }
   };
 
@@ -186,10 +277,7 @@ export const PlayerProvider = ({ children }: PlayerProviderProps) => {
   };
 
   const play = () => {
-    if (audioRef.current && currentSurah) {
-      audioRef.current.play();
-      setIsPlaying(true);
-    }
+    if (audioRef.current && currentSurah) startPlayback();
   };
 
   const seekTo = (time: number) => {
@@ -220,140 +308,149 @@ export const PlayerProvider = ({ children }: PlayerProviderProps) => {
     setAllSurahs(surahs);
   };
 
-  const playSurahFromPlaylist = (surah: SurahInfo, playlist: SurahInfo[]) => {
+  const playSurahFromPlaylist = (
+    surah: SurahInfo,
+    playlist: SurahInfo[],
+    reciter?: ReciterInfo
+  ) => {
     setCurrentPlaylist(playlist);
-    playSurah(surah);
+    playSurah(surah, reciter);
   };
 
-  const playNext = () => {
-    if (!currentSurah) return;
+  /** Metadata for a surah number, with a placeholder until the list loads. */
+  const surahByNumber = (number: number): SurahInfo =>
+    allSurahs[number - 1] ?? {
+      number,
+      name: `Surah ${number}`,
+      nameArabic: "",
+      totalAyah: currentSurah?.totalAyah ?? 0,
+    };
 
-    // If playing from a playlist, follow playlist order
+  /**
+   * Every other surah in the order next/previous would reach them, wrapping
+   * around: through the active playlist, or through all 114 in order.
+   */
+  const surahsInDirection = (direction: 1 | -1): SurahInfo[] => {
+    if (!currentSurah) return [];
+
     if (currentPlaylist && currentPlaylist.length > 0) {
       const currentIndex = currentPlaylist.findIndex(
         (s) => s.number === currentSurah.number
       );
-
       if (currentIndex !== -1) {
-        // Get next in playlist, loop to start if at end
-        const nextIndex = (currentIndex + 1) % currentPlaylist.length;
-        playSurah(currentPlaylist[nextIndex]);
-        return;
+        const length = currentPlaylist.length;
+        // A one-surah playlist repeats, as it always has
+        if (length === 1) return [currentPlaylist[0]];
+        return Array.from(
+          { length: length - 1 },
+          (_, step) => currentPlaylist[(currentIndex + direction * (step + 1) + length * 2) % length]
+        );
       }
     }
 
-    // Sequential playback (not in playlist)
-    if (currentSurah.number >= 114) {
-      // Loop back to surah 1
-      const firstSurah = allSurahs[0];
-      if (firstSurah) {
-        playSurah(firstSurah);
-      } else {
-        playSurah({ ...currentSurah, number: 1, name: "Al-Fatihah" });
-      }
-    } else {
-      // Play next sequential surah with proper metadata
-      const nextSurah = allSurahs[currentSurah.number]; // allSurahs is 0-indexed, so number gives us next
-      if (nextSurah) {
-        playSurah(nextSurah);
-      } else {
-        playSurah({
-          ...currentSurah,
-          number: currentSurah.number + 1,
-          name: `Surah ${currentSurah.number + 1}`,
-        });
-      }
-    }
+    return Array.from({ length: 113 }, (_, step) => {
+      const number = ((currentSurah.number - 1 + direction * (step + 1) + 114 * 2) % 114) + 1;
+      return surahByNumber(number);
+    });
   };
 
-  const playPrevious = () => {
-    if (!currentSurah) return;
+  /**
+   * Online, that's simply the adjacent surah. Offline, it skips ahead to the
+   * nearest one that's downloaded, so a playlist keeps going without internet.
+   */
+  const playAdjacent = (direction: 1 | -1) => {
+    const candidates = surahsInDirection(direction);
+    if (candidates.length === 0) return;
 
-    // If playing from a playlist, follow playlist order
-    if (currentPlaylist && currentPlaylist.length > 0) {
-      const currentIndex = currentPlaylist.findIndex(
-        (s) => s.number === currentSurah.number
+    if (navigator.onLine) {
+      playSurah(candidates[0]);
+      return;
+    }
+
+    const playable = candidates.find((s) => isDownloaded(currentReciter.id, s.number));
+    if (playable) {
+      playSurah(playable);
+    } else {
+      setIsPlaying(false);
+      showToast(
+        `You're offline and no other surahs are downloaded for ${currentReciter.name}.`,
+        { tone: "error" }
       );
-
-      if (currentIndex !== -1) {
-        // Get previous in playlist, loop to end if at start
-        const prevIndex = currentIndex === 0
-          ? currentPlaylist.length - 1
-          : currentIndex - 1;
-        playSurah(currentPlaylist[prevIndex]);
-        return;
-      }
-    }
-
-    // Sequential playback (not in playlist)
-    if (currentSurah.number <= 1) {
-      // Loop back to surah 114
-      const lastSurah = allSurahs[113];
-      if (lastSurah) {
-        playSurah(lastSurah);
-      } else {
-        playSurah({ ...currentSurah, number: 114, name: "An-Nas" });
-      }
-    } else {
-      // Play previous sequential surah with proper metadata
-      const prevSurah = allSurahs[currentSurah.number - 2]; // -2 because 0-indexed and we want previous
-      if (prevSurah) {
-        playSurah(prevSurah);
-      } else {
-        playSurah({
-          ...currentSurah,
-          number: currentSurah.number - 1,
-          name: `Surah ${currentSurah.number - 1}`,
-        });
-      }
     }
   };
 
-  // Keep playNextRef in sync so ended handler can call it
+  const playNext = () => playAdjacent(1);
+  const playPrevious = () => playAdjacent(-1);
+
+  // Keep the refs in sync so the audio element's handlers can call them
   useEffect(() => {
     playNextRef.current = playNext;
+    reportAudioErrorRef.current = () => {
+      if (!currentSurah) return;
+      const surah = currentSurah;
+      showToast(
+        navigator.onLine
+          ? `Couldn't play ${surah.name}. Please try again.`
+          : `You're offline. Download ${surah.name} to listen without internet.`,
+        {
+          tone: "error",
+          action: navigator.onLine
+            ? { label: "Retry", onClick: () => playSurah(surah) }
+            : undefined,
+        }
+      );
+    };
   });
 
   const changeReciter = async (reciter: ReciterInfo) => {
+    const previousReciter = currentReciter;
     setCurrentReciter(reciter);
 
-    // If a surah is currently loaded, re-fetch audio with new reciter
-    if (currentSurah && audioRef.current) {
-      const wasPlaying = isPlaying;
-      const currentPosition = audioRef.current.currentTime;
+    // If a surah is currently loaded, load the new reciter's recording of it
+    const audio = audioRef.current;
+    if (!currentSurah || !audio) return;
 
-      setIsLoading(true);
+    const surah = currentSurah;
+    const wasPlaying = isPlaying;
+    const currentPosition = audio.currentTime;
+    const request = ++loadRequestRef.current;
 
-      try {
-        const response = await fetch(
-          `https://quranapi.pages.dev/api/audio/${currentSurah.number}.json`
-        );
-        const data = await response.json();
+    setIsLoading(true);
 
-        const reciterData = data[reciter.id];
-        if (reciterData && reciterData.url) {
-          setAudioSrc(reciterData.url);
-          audioRef.current.src = reciterData.url;
-
-          // Wait for audio to be ready before seeking
-          audioRef.current.onloadedmetadata = () => {
-            if (audioRef.current) {
-              // Try to resume from similar position (if within duration)
-              const newDuration = audioRef.current.duration;
-              if (currentPosition < newDuration) {
-                audioRef.current.currentTime = currentPosition;
-              }
-              if (wasPlaying) {
-                audioRef.current.play();
-                setIsPlaying(true);
-              }
-            }
-          };
-        }
-      } catch (error) {
-        console.error("Error changing reciter:", error);
-        setIsLoading(false);
+    try {
+      const src = await resolveAudioSrc(surah, reciter.id);
+      if (request !== loadRequestRef.current) {
+        if (src.startsWith("blob:")) URL.revokeObjectURL(src);
+        return;
       }
+
+      setAudioElementSrc(src);
+
+      // Wait for audio to be ready before seeking. Runs once — left attached,
+      // it would rewind every later track to this position.
+      audio.addEventListener(
+        "loadedmetadata",
+        () => {
+          if (request !== loadRequestRef.current) return;
+          // Try to resume from similar position (if within duration)
+          if (currentPosition < audio.duration) {
+            audio.currentTime = currentPosition;
+          }
+          if (wasPlaying) startPlayback();
+        },
+        { once: true }
+      );
+    } catch (error) {
+      if (request !== loadRequestRef.current) return;
+      setIsLoading(false);
+      // Keep playing the reciter we have rather than stopping
+      setCurrentReciter(previousReciter);
+      showToast(
+        error instanceof PlaybackError && !navigator.onLine
+          ? `You're offline. Download ${surah.name} with ${reciter.name} to switch to them without internet.`
+          : `Couldn't switch to ${reciter.name}. Check your connection and try again.`,
+        { tone: "error" }
+      );
     }
   };
 

@@ -9,6 +9,7 @@ import { usePlayer } from "../context/PlayerContext";
 import { useCustomPlaylists } from "../context/PlaylistsContext";
 import type { CustomPlaylist } from "../context/PlaylistsContext";
 import SurahListRow from "./surahListRow";
+import PlaylistDownloadButton from "./playlistDownloadButton";
 import { usePlaylistCover } from "../hooks/usePlaylistCover";
 
 interface CustomPlaylistDetailProps {
@@ -116,15 +117,19 @@ const CustomPlaylistDetail: React.FC<CustomPlaylistDetailProps> = ({
               {surahs.length} surah{surahs.length === 1 ? "" : "s"}
             </p>
 
-            <button
-              onClick={handlePlayAll}
-              disabled={surahs.length === 0}
-              className="flex items-center gap-2 px-6 py-3 rounded-full font-semibold transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-              style={{ backgroundColor: "white", color: "var(--accent-primary)" }}
-            >
-              <PlayIcon className="w-5 h-5" />
-              Play All
-            </button>
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                onClick={handlePlayAll}
+                disabled={surahs.length === 0}
+                className="flex items-center gap-2 px-6 py-3 rounded-full font-semibold transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                style={{ backgroundColor: "white", color: "var(--accent-primary)" }}
+              >
+                <PlayIcon className="w-5 h-5" />
+                Play All
+              </button>
+
+              <PlaylistDownloadButton surahs={surahs} variant="light" />
+            </div>
           </div>
         </div>
       </div>

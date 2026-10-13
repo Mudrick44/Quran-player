@@ -120,13 +120,23 @@ const fetchTimings = (surahNumber: number, readId: number) =>
  */
 export const saveTranslationsForOffline = async (surahNumber: number, reciterId: number) => {
   const readId = MP3QURAN_READ_IDS[reciterId];
-  const [english, ayahTimings] = await Promise.all([
-    fetchTranslations(surahNumber),
-    readId ? fetchTimings(surahNumber, readId) : Promise.resolve(null),
-  ]);
 
-  await saveText(translationTextKey(surahNumber), english);
-  if (readId && ayahTimings) await saveText(timingTextKey(surahNumber, readId), ayahTimings);
+  // Each is saved on its own, so one failing doesn't lose the other
+  const saves = [
+    fetchTranslations(surahNumber).then((english) =>
+      saveText(translationTextKey(surahNumber), english)
+    ),
+  ];
+  if (readId) {
+    saves.push(
+      fetchTimings(surahNumber, readId).then((ayahTimings) =>
+        saveText(timingTextKey(surahNumber, readId), ayahTimings)
+      )
+    );
+  }
+
+  const failed = (await Promise.allSettled(saves)).find((r) => r.status === "rejected");
+  if (failed) throw (failed as PromiseRejectedResult).reason;
 };
 
 export function useAyahTranslations(surahNumber: number, reciterId: number) {

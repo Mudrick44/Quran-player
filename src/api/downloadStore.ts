@@ -79,8 +79,14 @@ const openDb = (): Promise<IDBDatabase> => {
       };
       resolve(db);
     };
-    request.onerror = () => reject(request.error ?? new StorageUnavailableError());
-    request.onblocked = () => reject(new StorageUnavailableError());
+    // Any failure to open means no downloads in this browser — Firefox's
+    // private mode, for one, fails here with InvalidStateError
+    request.onerror = () => {
+      console.error("Error opening downloads storage:", request.error);
+      reject(new StorageUnavailableError());
+    };
+    // `onblocked` isn't a failure: the open completes once the other tab
+    // closes its connection, which `onversionchange` makes it do
   });
 
   // A failed open shouldn't poison every later attempt
@@ -97,11 +103,14 @@ const requestToPromise = <T,>(request: IDBRequest<T>) =>
     request.onerror = () => reject(request.error);
   });
 
+/**
+ * Settles on abort rather than on `error`: when a write fails (a full disk,
+ * say) `tx.error` is only set once the transaction aborts, so rejecting from
+ * `onerror` would lose the reason.
+ */
 const transactionDone = (tx: IDBTransaction) =>
   new Promise<void>((resolve, reject) => {
     tx.oncomplete = () => resolve();
-    // A quota failure surfaces here, on the transaction, not the request
-    tx.onerror = () => reject(tx.error);
     tx.onabort = () => reject(tx.error ?? new DOMException("Transaction aborted", "AbortError"));
   });
 
@@ -161,7 +170,5 @@ export const saveText = async (key: string, value: unknown) => {
 export const isQuotaError = (error: unknown) =>
   error instanceof DOMException &&
   (error.name === "QuotaExceededError" ||
-    // Firefox
-    error.name === "NS_ERROR_DOM_QUOTA_REACHED" ||
-    // Safari reports a full disk as an unknown error on a write
-    error.name === "UnknownError");
+    // Older Firefox
+    error.name === "NS_ERROR_DOM_QUOTA_REACHED");

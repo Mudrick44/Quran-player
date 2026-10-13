@@ -162,14 +162,14 @@ export const PlayerProvider = ({ children }: PlayerProviderProps) => {
    * the stream. Throws a `PlaybackError` with a message for the user.
    */
   const resolveAudioSrc = async (surah: SurahInfo, reciterId: number): Promise<string> => {
-    if (isDownloaded(reciterId, surah.number)) {
-      try {
-        const blob = await getDownloadedAudio(downloadKey(reciterId, surah.number));
-        if (blob) return URL.createObjectURL(blob);
-      } catch (error) {
-        // Fall through to streaming if we can
-        console.error("Error reading downloaded audio:", error);
-      }
+    // Asks the store directly rather than the downloads list, which is still
+    // empty for a moment after launch — exactly when an offline user taps play
+    try {
+      const blob = await getDownloadedAudio(downloadKey(reciterId, surah.number));
+      if (blob) return URL.createObjectURL(blob);
+    } catch (error) {
+      // No storage, or a read failure: fall through to streaming if we can
+      console.error("Error reading downloaded audio:", error);
     }
 
     if (!navigator.onLine) {
@@ -227,15 +227,19 @@ export const PlayerProvider = ({ children }: PlayerProviderProps) => {
     });
   };
 
-  const playSurah = async (surah: SurahInfo, reciter: ReciterInfo = currentReciter) => {
+  /**
+   * The surah and reciter only become current once their audio is in hand.
+   * If loading fails, whatever was playing carries on under its own title,
+   * instead of the player naming one surah while holding another's audio.
+   */
+  const playSurah = async (
+    surah: SurahInfo,
+    reciter: ReciterInfo = currentReciter,
+    /** Becomes the active playlist on success; left alone when omitted */
+    playlist?: SurahInfo[] | null
+  ) => {
     const request = ++loadRequestRef.current;
-
     setIsLoading(true);
-    setCurrentSurah(surah);
-    // Don't show the previous track's position against this one
-    setCurrentTime(0);
-    setDuration(0);
-    if (reciter.id !== currentReciter.id) setCurrentReciter(reciter);
 
     try {
       const src = await resolveAudioSrc(surah, reciter.id);
@@ -244,14 +248,18 @@ export const PlayerProvider = ({ children }: PlayerProviderProps) => {
         if (src.startsWith("blob:")) URL.revokeObjectURL(src);
         return;
       }
+      setCurrentSurah(surah);
+      if (reciter.id !== currentReciter.id) setCurrentReciter(reciter);
+      if (playlist !== undefined) setCurrentPlaylist(playlist);
+      // Don't show the previous track's position against this one
+      setCurrentTime(0);
+      setDuration(0);
       setAudioElementSrc(src);
       startPlayback();
     } catch (error) {
       if (request !== loadRequestRef.current) return;
-      audioRef.current?.pause();
-      setIsPlaying(false);
       setIsLoading(false);
-      reportPlaybackError(error, () => playSurah(surah, reciter));
+      reportPlaybackError(error, () => playSurah(surah, reciter, playlist));
     }
   };
 
@@ -313,8 +321,7 @@ export const PlayerProvider = ({ children }: PlayerProviderProps) => {
     playlist: SurahInfo[],
     reciter?: ReciterInfo
   ) => {
-    setCurrentPlaylist(playlist);
-    playSurah(surah, reciter);
+    playSurah(surah, reciter, playlist);
   };
 
   /** Metadata for a surah number, with a placeholder until the list loads. */

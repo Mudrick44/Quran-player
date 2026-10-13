@@ -103,6 +103,20 @@ const loadQueue = (): QueueItem[] => {
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+const untilVisible = () =>
+  new Promise<void>((resolve) => {
+    if (document.visibilityState === "visible") {
+      resolve();
+      return;
+    }
+    const onChange = () => {
+      if (document.visibilityState !== "visible") return;
+      document.removeEventListener("visibilitychange", onChange);
+      resolve();
+    };
+    document.addEventListener("visibilitychange", onChange);
+  });
+
 /** Tallies one burst of downloads so it can be summed up in a single message. */
 interface Run {
   succeeded: string[];
@@ -139,6 +153,10 @@ export const DownloadsProvider = ({ children }: { children: ReactNode }) => {
     listDownloads()
       .then((list) => {
         setRecords(Object.fromEntries(list.map((record) => [record.key, record])));
+        // The app can be closed between saving a download and updating the
+        // queue; don't fetch those again
+        const saved = new Set(list.map((record) => record.key));
+        setQueue((current) => current.filter((item) => !saved.has(item.key)));
       })
       .catch((error) => {
         console.error("Error reading downloads:", error);
@@ -232,6 +250,14 @@ export const DownloadsProvider = ({ children }: { children: ReactNode }) => {
       setActiveProgress(null);
       updateItem(item.key, { status: "downloading" });
 
+      // Phones cut connections when the app goes to the background. That's
+      // expected, so it shouldn't use up the retries meant for real failures.
+      let wentToBackground = document.visibilityState === "hidden";
+      const noteBackground = () => {
+        if (document.visibilityState === "hidden") wentToBackground = true;
+      };
+      document.addEventListener("visibilitychange", noteBackground);
+
       let lastProgressAt = 0;
 
       try {
@@ -285,9 +311,17 @@ export const DownloadsProvider = ({ children }: { children: ReactNode }) => {
           error instanceof DownloadError ? error.kind : "network";
 
         if (kind === "aborted") {
-          removeFromQueue([item.key]);
+          // Only the cancelled run: a fresh "Download" tapped straight after
+          // the cancel is queued again and must survive
+          setQueue((current) =>
+            current.filter((q) => !(q.key === item.key && q.status === "downloading"))
+          );
         } else if (kind === "offline") {
           // Paused, not failed: picked up again when the connection returns
+          updateItem(item.key, { status: "queued" });
+        } else if (kind === "network" && wentToBackground) {
+          // Paused, not failed: carries on once the app is in front again
+          await untilVisible();
           updateItem(item.key, { status: "queued" });
         } else if (kind === "network" && item.attempts + 1 < MAX_ATTEMPTS) {
           await wait(RETRY_DELAY_MS * (item.attempts + 1));
@@ -302,6 +336,7 @@ export const DownloadsProvider = ({ children }: { children: ReactNode }) => {
           runRef.current.failed.push({ key: item.key, surahName: item.surah.name, kind });
         }
       } finally {
+        document.removeEventListener("visibilitychange", noteBackground);
         controllerRef.current = null;
         setActiveKey(null);
         setActiveProgress(null);
@@ -368,7 +403,14 @@ export const DownloadsProvider = ({ children }: { children: ReactNode }) => {
     }
 
     if (toRetry.length) retry(toRetry);
-    if (toAdd.length) setQueue((current) => [...current, ...toAdd]);
+    if (toAdd.length) {
+      // Dedupe against the latest queue too: two taps in one tick both see
+      // the same render's queue
+      setQueue((current) => {
+        const queued = new Set(current.map((item) => item.key));
+        return [...current, ...toAdd.filter((item) => !queued.has(item.key))];
+      });
+    }
 
     const count = toAdd.length + toRetry.length;
     if (count > 0 && !isOnline) {

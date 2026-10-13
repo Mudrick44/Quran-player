@@ -46,6 +46,13 @@ const SPACE_MARGIN_BYTES = 50 * 1024 * 1024;
 const audioIndexUrl = (surahNumber: number) =>
   `https://quranapi.pages.dev/api/audio/${surahNumber}.json`;
 
+/**
+ * Rate limiting and server errors pass, so they are retried like a dropped
+ * connection. Only a missing or forbidden file is reported as unavailable.
+ */
+const kindForStatus = (status: number): DownloadErrorKind =>
+  status === 408 || status === 429 || status >= 500 ? "network" : "unavailable";
+
 const isAbort = (error: unknown) =>
   error instanceof DOMException && error.name === "AbortError";
 
@@ -58,7 +65,7 @@ const resolveSources = async (
   let data: Record<string, { url?: string; originalUrl?: string }>;
   try {
     const response = await fetch(audioIndexUrl(surahNumber), { signal });
-    if (!response.ok) throw new DownloadError("unavailable");
+    if (!response.ok) throw new DownloadError(kindForStatus(response.status));
     data = await response.json();
   } catch (error) {
     if (error instanceof DownloadError) throw error;
@@ -112,7 +119,7 @@ const fetchAudio = async (
   try {
     resetStallTimer();
     const response = await fetch(url, { signal: controller.signal });
-    if (!response.ok) throw new DownloadError("unavailable", `HTTP ${response.status}`);
+    if (!response.ok) throw new DownloadError(kindForStatus(response.status), `HTTP ${response.status}`);
 
     const lengthHeader = Number(response.headers.get("Content-Length"));
     const total = Number.isFinite(lengthHeader) && lengthHeader > 0 ? lengthHeader : null;
@@ -151,6 +158,10 @@ const fetchAudio = async (
   } finally {
     clearTimeout(stallTimer);
     signal.removeEventListener("abort", forwardAbort);
+    // Closes the connection on every early exit — a failed space check or
+    // bad status would otherwise leave the body streaming in the background.
+    // Harmless once the body has been read to the end.
+    controller.abort();
   }
 };
 

@@ -22,9 +22,23 @@ export interface SurahInfo {
 
 export type { ReciterInfo };
 
+const DEFAULT_RECITER_KEY = "quranPlayer.defaultReciterId";
+
+/** The reciter the user made their default, or the first one. */
+const loadDefaultReciter = (): ReciterInfo => {
+  try {
+    const id = Number(localStorage.getItem(DEFAULT_RECITER_KEY));
+    return RECITERS.find((reciter) => reciter.id === id) ?? RECITERS[0];
+  } catch {
+    return RECITERS[0];
+  }
+};
+
 interface PlayerContextType {
   currentSurah: SurahInfo | null;
   currentReciter: ReciterInfo;
+  /** Who the app starts with; remembered between visits */
+  defaultReciter: ReciterInfo;
   availableReciters: ReciterInfo[];
   audioSrc: string;
   isPlaying: boolean;
@@ -42,6 +56,7 @@ interface PlayerContextType {
   setPlaylist: (playlist: SurahInfo[] | null) => void;
   setSurahList: (surahs: SurahInfo[]) => void;
   changeReciter: (reciter: ReciterInfo) => void;
+  setDefaultReciter: (reciter: ReciterInfo) => void;
   togglePlay: () => void;
   toggleAutoPlay: () => void;
   pause: () => void;
@@ -61,7 +76,8 @@ interface PlayerProviderProps {
 
 export const PlayerProvider = ({ children }: PlayerProviderProps) => {
   const [currentSurah, setCurrentSurah] = useState<SurahInfo | null>(null);
-  const [currentReciter, setCurrentReciter] = useState<ReciterInfo>(RECITERS[0]);
+  const [defaultReciter, setDefaultReciterState] = useState<ReciterInfo>(loadDefaultReciter);
+  const [currentReciter, setCurrentReciter] = useState<ReciterInfo>(defaultReciter);
   const [audioSrc, setAudioSrc] = useState("");
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -447,6 +463,21 @@ export const PlayerProvider = ({ children }: PlayerProviderProps) => {
     }
   };
 
+  /**
+   * The reciter the app starts with. Also switches to them now, so the next
+   * surah tapped is in their voice rather than whoever was picked before.
+   */
+  const setDefaultReciter = (reciter: ReciterInfo) => {
+    setDefaultReciterState(reciter);
+    try {
+      localStorage.setItem(DEFAULT_RECITER_KEY, String(reciter.id));
+    } catch (error) {
+      // Still the default for this visit
+      console.error("Error saving default reciter:", error);
+    }
+    if (reciter.id !== currentReciter.id) changeReciter(reciter);
+  };
+
   // Declared after the audio element is created, so it can attach to it
   useMediaSession({
     audioRef,
@@ -465,6 +496,7 @@ export const PlayerProvider = ({ children }: PlayerProviderProps) => {
       value={{
         currentSurah,
         currentReciter,
+        defaultReciter,
         availableReciters: RECITERS,
         audioSrc,
         isPlaying,
@@ -481,6 +513,7 @@ export const PlayerProvider = ({ children }: PlayerProviderProps) => {
         setPlaylist,
         setSurahList,
         changeReciter,
+        setDefaultReciter,
         togglePlay,
         toggleAutoPlay,
         pause,

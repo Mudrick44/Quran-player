@@ -16,6 +16,7 @@ import UpdateBanner from "./components/updateBanner";
 import DownloadsPage from "./components/downloadsPage";
 import { PlayerProvider, usePlayer } from "./context/PlayerContext";
 import { PlaylistsProvider } from "./context/PlaylistsContext";
+import { PreviewProvider } from "./context/PreviewContext";
 import { DownloadsProvider } from "./context/DownloadsContext";
 import { ToastProvider } from "./context/ToastContext";
 import { useOnlineStatus } from "./hooks/useOnlineStatus";
@@ -473,15 +474,18 @@ const App: React.FC = () => {
 };
 
 // Toasts are outermost so every provider can report to the user, and
-// downloads sit above the player, which plays the downloaded copies
+// downloads sit above the player, which plays the downloaded copies. Previews
+// sit inside the player, which they pause and resume
 const AppWithProvider: React.FC = () => {
   return (
     <ToastProvider>
       <DownloadsProvider>
         <PlayerProvider>
-          <PlaylistsProvider>
-            <App />
-          </PlaylistsProvider>
+          <PreviewProvider>
+            <PlaylistsProvider>
+              <App />
+            </PlaylistsProvider>
+          </PreviewProvider>
         </PlayerProvider>
       </DownloadsProvider>
     </ToastProvider>

@@ -95,7 +95,19 @@ export default defineConfig({
               cacheableResponse: { statuses: [0, 200] },
             },
           },
-          // Recitation audio is deliberately not cached: files are large and
+          {
+            // Single-ayah recordings for reciter previews. Small, fetched
+            // whole (no range requests), and fixed per reciter and ayah.
+            urlPattern: ({ url }) =>
+              url.hostname === "the-quran-project.github.io" && url.pathname.endsWith(".mp3"),
+            handler: "CacheFirst",
+            options: {
+              cacheName: "ayah-audio",
+              expiration: { maxEntries: 30, maxAgeSeconds: 90 * DAY },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+          // Full-surah recitation audio is deliberately not cached: files are large and
           // streamed with range requests. Offline listening is its own feature.
         ],
       },

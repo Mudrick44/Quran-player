@@ -3,6 +3,7 @@ import { useMediaSession } from "../hooks/useMediaSession";
 import { useDownloads } from "./DownloadsContext";
 import { useToast } from "./ToastContext";
 import { downloadKey, getDownloadedAudio } from "../api/downloadStore";
+import { RECITERS, type ReciterInfo } from "../data/reciters";
 
 /** A playback failure whose message is fit to show the user. */
 class PlaybackError extends Error {
@@ -19,19 +20,7 @@ export interface SurahInfo {
   totalAyah: number;
 }
 
-export interface ReciterInfo {
-  id: number;
-  name: string;
-}
-
-// Available reciters from the API
-const AVAILABLE_RECITERS: ReciterInfo[] = [
-  { id: 1, name: "Mishary Rashid Al Afasy" },
-  { id: 2, name: "Abu Bakr Al Shatri" },
-  { id: 3, name: "Nasser Al Qatami" },
-  { id: 4, name: "Yasser Al Dosari" },
-  { id: 5, name: "Hani Ar Rifai" },
-];
+export type { ReciterInfo };
 
 interface PlayerContextType {
   currentSurah: SurahInfo | null;
@@ -72,10 +61,7 @@ interface PlayerProviderProps {
 
 export const PlayerProvider = ({ children }: PlayerProviderProps) => {
   const [currentSurah, setCurrentSurah] = useState<SurahInfo | null>(null);
-  const [currentReciter, setCurrentReciter] = useState<ReciterInfo>({
-    id: 1,
-    name: "Mishary Rashid Al Afasy",
-  });
+  const [currentReciter, setCurrentReciter] = useState<ReciterInfo>(RECITERS[0]);
   const [audioSrc, setAudioSrc] = useState("");
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -479,7 +465,7 @@ export const PlayerProvider = ({ children }: PlayerProviderProps) => {
       value={{
         currentSurah,
         currentReciter,
-        availableReciters: AVAILABLE_RECITERS,
+        availableReciters: RECITERS,
         audioSrc,
         isPlaying,
         isLoading,

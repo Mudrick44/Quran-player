@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { getText, saveText } from "./downloadStore";
+import { cached, fetchJson } from "./fetchJson";
 
 /**
  * Per-ayah English translation, synced to the full-surah recitation.
@@ -33,53 +34,9 @@ const MP3QURAN_READ_IDS: Record<number, number> = {
   5: 89, // Hani Ar Rifai
 };
 
-const REQUEST_TIMEOUT_MS = 10_000;
-const RETRY_DELAYS_MS = [1_000, 3_000];
-
 // Module-level caches so reopening the sheet or replaying a surah is instant.
-// They hold promises so concurrent callers share one request; failures are
-// evicted so the next attempt refetches.
 const translationCache = new Map<number, Promise<string[]>>();
 const timingCache = new Map<string, Promise<AyahTiming[]>>();
-
-const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
-const fetchJson = async (url: string): Promise<unknown> => {
-  let lastError: unknown;
-
-  for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
-    if (attempt > 0) {
-      // No point burning retries while the device knows it is offline — the
-      // hook retries on the `online` event instead
-      if (!navigator.onLine) break;
-      await wait(RETRY_DELAYS_MS[attempt - 1]);
-    }
-
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
-    try {
-      const response = await fetch(url, { signal: controller.signal });
-      if (!response.ok) throw new Error(`Request failed: ${response.status}`);
-      return await response.json();
-    } catch (error) {
-      lastError = error;
-    } finally {
-      clearTimeout(timer);
-    }
-  }
-
-  throw lastError;
-};
-
-const cached = <K, V>(cache: Map<K, Promise<V>>, key: K, load: () => Promise<V>) => {
-  const existing = cache.get(key);
-  if (existing) return existing;
-
-  const promise = load();
-  cache.set(key, promise);
-  promise.catch(() => cache.delete(key));
-  return promise;
-};
 
 // Keys in the downloads store, where a downloaded surah keeps its own copy
 const translationTextKey = (surahNumber: number) => `translation-${surahNumber}`;
